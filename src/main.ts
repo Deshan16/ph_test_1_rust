@@ -1,12 +1,8 @@
-import { invoke } from "@tauri-apps/api/core";
+import { inventory_get_batches, inventory_get_products } from "./invokes";
 
-type Product = {
-	prod_id: number;
-	name: string
-}
-
-window.addEventListener("DOMContentLoaded", async() => {
-	const products = await invoke<Product>("get_products");
+window.addEventListener("DOMContentLoaded", async () => {
+	const products = await inventory_get_products("")
 	console.log(products);
-	
+	const batches= await inventory_get_batches(5);
+	console.log(batches);
 });
