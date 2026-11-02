@@ -14,6 +14,12 @@ pub fn run() {
                     .max_connections(5)
                     .connect(&url)
             )?;
+            
+            match tauri::async_runtime::block_on(database::deactivate_batches(&pool)) {
+                Ok(n) => println!("Deactivated {n} batches"),
+                Err(e) => eprintln!("Deactivate Failed {e}"),
+            }
+            
             app.manage(pool);
             Ok(())
         })

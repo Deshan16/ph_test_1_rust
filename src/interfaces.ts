@@ -1,3 +1,6 @@
+/**
+ *  Interface representing the product data coming from backend.
+ */
 export interface ProductRow {
     prod_id: number,
     prod_type: string,
@@ -13,6 +16,9 @@ export interface ProductRow {
     form: string | null
 }
 
+/**
+ *  Interface representing the batch data of a product also coming from backend.
+ */
 export interface BatchRow {
     batch_id: number,
     batch_number: string,
@@ -22,4 +28,13 @@ export interface BatchRow {
     current_stock: string,
     expired: boolean,
     in_expiry_period: boolean
+}
+
+/**
+ *  Contain the message that need to displayed on in the tooltip.
+ */
+export const LABELS: Record<string, string> = {
+    "expired": "Expired",
+    "expiring": "In Expiry Period",
+    "low-stock": "Stock below reorder level"
 }
