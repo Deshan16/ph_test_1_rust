@@ -7,13 +7,13 @@ export interface ProductRow {
     name: string,
     reorder_level: string,
     stock: string,
-    expired: boolean,
     in_expiry_period: boolean,
+    low_stock: boolean
     // Medicine Specific Attributes.
     generic_name: string | null,
     company: string | null,
     strength: string | null,
-    form: string | null
+    form: string | null,
 }
 
 /**
@@ -26,7 +26,6 @@ export interface BatchRow {
     unit_sell_price: string,
     expiry_date: string,
     current_stock: string,
-    expired: boolean,
     in_expiry_period: boolean
 }
 

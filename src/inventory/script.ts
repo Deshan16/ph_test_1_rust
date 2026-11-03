@@ -15,9 +15,9 @@ const overlay = must_get<HTMLDivElement>(".overlay");
  *  @returns class name. if nothing is wrong null
  */
 function product_row_class_picker(product_row: ProductRow): string | null {
-    if (product_row.in_expiry_period && Decimal(product_row.stock).lessThan(Decimal(product_row.reorder_level))) return "critical";
+    if (product_row.in_expiry_period && product_row.low_stock) return "critical";
     if (product_row.in_expiry_period) return "expiring";
-    if (Decimal(product_row.stock).lessThan(Decimal(product_row.reorder_level))) return "low-stock";
+    if (product_row.low_stock) return "low-stock";
     return null;
 }
 
