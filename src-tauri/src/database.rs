@@ -1,6 +1,6 @@
 use sqlx::MySqlPool;
 use tauri::State;
-use crate::types::{ BillingProductSearch, InventoryBatchRow, InventoryProductRow };
+use crate::types::{ BillingBatchSearch, BillingProductSearch, InventoryBatchRow, InventoryProductRow };
 
 /// get all the products from the database.
 #[tauri::command]
@@ -45,6 +45,7 @@ pub async fn inventory_get_batches(pool: State<'_, MySqlPool>, prod_id: i32) -> 
     Ok(rows)
 }
 
+#[tauri::command]
 pub async fn billing_get_products(pool: State<'_, MySqlPool>, text: String) -> Result<Vec<BillingProductSearch>, String> {
     let parameter = format!("%{}%", text);
     let rows = sqlx::query_as::<_, BillingProductSearch>("
@@ -62,6 +63,22 @@ pub async fn billing_get_products(pool: State<'_, MySqlPool>, text: String) -> R
         .bind(&parameter)
         .bind(&parameter)
         .bind(&parameter)
+        .fetch_all(pool.inner())
+        .await
+        .map_err(|e| e.to_string())?;
+    Ok(rows)
+}
+
+#[tauri::command]
+pub async fn billing_get_batches(pool: State<'_, MySqlPool>, prod_id: i32) -> Result<Vec<BillingBatchSearch>, String> {
+    let rows = sqlx::query_as("
+            SELECT b.batch_id, b.batch_number, b.unit_sell_price, b.expiry_date, b.current_stock,
+                b.expiry_date >= CURDATE() AND b.current_stock > 0 AND b.expiry_date <= DATE_ADD(CURDATE(), INTERVAL p.expiry_warning_days DAY) AS in_expiry_period
+            FROM Batches b
+            LEFT JOIN Product p ON b.prod_id = p.prod_id
+            WHERE b.prod_id = ? AND b.is_active = TRUE;
+        ")
+        .bind(prod_id)
         .fetch_all(pool.inner())
         .await
         .map_err(|e| e.to_string())?;

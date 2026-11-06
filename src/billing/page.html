@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Billing</title>
+    <link rel="stylesheet" href="billing.css">
+    <link rel="stylesheet" href="style.css">
+    <script type="module" src="script.ts"></script>
+    <script type="module" src="../interfaces.ts"></script>
+    <script type="module" src="../invokes.ts"></script>
 </head>
 <body>
     <div class="top_bar">
@@ -13,34 +18,49 @@
         <div class="title">
             <span>Billing</span>
         </div>
-    </div>
-    <div class="billing_table">
-        <table>
-            <thead>
-                <th>Product ID</th>
-                <th>Product Type</th>
-                <th>Name</th>
-                <th>Unit Price</th>
-                <th>Quantity</th>
-                <th>Total</th>
-            </thead>
-        </table>
-    </div>
-    <div class="search_window">
-        <div class="search">
-            <input type="text" id="search_text" placeholder="Type here to search">
-            <button class="clear" hidden>Clear</button>
+        <div class="">
+            <button class="search_btn">&#x1F50D;</button>
         </div>
-        <div class="search_results" hidden>
-            <table>
-                <thead>
+    </div>
+    
+    <div class="billing_table">
+        <table id="billing_table">
+            <thead>
+                <tr>
                     <th>Product ID</th>
                     <th>Product Type</th>
                     <th>Name</th>
-                    <th>Generic Name</th>
-                    <th>Company</th>
-                    <th>Form</th>
-                    <th>Strength</th>
+                    <th>Unit Price</th>
+                    <th>Quantity</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+            <tfoot>
+                <tr class="add_row">
+                    <td colspan="6"><span class="plus">+</span> Add item</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <div class="search_window" hidden>
+        <div class="search">
+            <input type="text" id="search_text" placeholder="Type here to search">
+            <button class="clear" id="clear" hidden>Clear</button>
+        </div>
+        <div class="search_table_box" hidden>
+            <table class="search_table">
+                <thead>
+                    <tr>
+                        <th>Product ID</th>
+                        <th>Product Type</th>
+                        <th>Name</th>
+                        <th>Generic Name</th>
+                        <th>Company</th>
+                        <th>Form</th>
+                        <th>Strength</th>
+                    </tr>
                 </thead>
                 <tbody></tbody>
             </table>
@@ -60,5 +80,6 @@
             </table>
         </div>
     </div>
+    <div class="overlay"></div>
 </body>
 </html>

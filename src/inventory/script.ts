@@ -1,6 +1,5 @@
-import { BatchRow, LABELS, ProductRow } from "../interfaces";
+import { InventoryBatchRow, LABELS, InventoryProductRow } from "../interfaces";
 import { inventory_get_batches, inventory_get_products, must_get } from "../invokes";
-import { Decimal } from "decimal.js";
 
 const product_table_body = must_get<HTMLTableSectionElement>("#invn_table tbody");
 const text_input = must_get<HTMLInputElement>("#search_text");
@@ -14,7 +13,7 @@ const overlay = must_get<HTMLDivElement>(".overlay");
  *  @param product_row ProductRow that holds the info about the current row
  *  @returns class name. if nothing is wrong null
  */
-function product_row_class_picker(product_row: ProductRow): string | null {
+function product_row_class_picker(product_row: InventoryProductRow): string | null {
     if (product_row.in_expiry_period && product_row.low_stock) return "critical";
     if (product_row.in_expiry_period) return "expiring";
     if (product_row.low_stock) return "low-stock";
@@ -26,7 +25,7 @@ function product_row_class_picker(product_row: ProductRow): string | null {
  *  @param batch_row BatchRow that holds the info about the batch.
  *  @returns class name. if nothing is wrong null
  */
-function batch_row_class_picker(batch_row: BatchRow): string | null {
+function batch_row_class_picker(batch_row: InventoryBatchRow): string | null {
     if (batch_row.in_expiry_period) return "expiring";
     return null;
 }

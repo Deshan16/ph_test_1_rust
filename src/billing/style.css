@@ -1,0 +1,191 @@
+/* ---------- reset & tokens ---------- */
+* { padding: 0; margin: 0; box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+:root {
+    --bg: #0f1115;
+    --surface: #181b22;
+    --surface-2: #1f232c;
+    --border: #2a2f3a;
+    --text: #e6e8ee;
+    --muted: #8b92a3;
+    --accent: #5b8def;
+
+    --critical-fill: #5c141a; --critical-edge: #ff2d3d;
+    --expiring-fill: #4a3515; --expiring-edge: #d99a2b;
+    --low-stock-fill: #35294f; --low-stock-edge: #9b7de8;
+}
+
+/* ---------- layout ---------- */
+body {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+    color: var(--text);
+    font: 14px "Inter", system-ui, sans-serif;
+}
+
+.top_bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+}
+.top_bar .title { flex: 1; font-size: 18px; font-weight: 600; }
+.top_bar button {
+    background: none;
+    border: none;
+    color: var(--text);
+    font-size: 22px;
+    cursor: pointer;
+    padding: 2px 8px;
+    border-radius: 6px;
+}
+.top_bar button:hover { background: var(--surface-2); }
+
+/* ---------- tables (shared) ---------- */
+.billing_table,
+.search_table_box,
+.search_batch_results {
+    overflow: auto;
+    min-width: 0;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+}
+.search_table_box,
+.search_batch_results { max-height: 30vh; }
+
+table { width: max-content; min-width: 100%; border-collapse: collapse; }
+th, td {
+    padding: 10px 14px;
+    text-align: left;
+    white-space: nowrap;
+    max-width: 280px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+th {
+    position: sticky;
+    top: 0;
+    background: var(--surface-2);
+    color: var(--muted);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--border);
+}
+td { border-bottom: 1px solid var(--border); }
+
+/* clickable rows only in the search window */
+.search_table_box tbody tr,
+.search_batch_results tbody tr { cursor: pointer; }
+
+.search_table_box tbody tr:not(.critical, .expiring, .low-stock):hover td,
+.search_batch_results tbody tr:not(.critical, .expiring, .low-stock):hover td {
+    background: var(--surface-2);
+}
+
+/* ---------- row states (one definition, works in any table) ---------- */
+tr.critical  { --fill: var(--critical-fill);  --edge: var(--critical-edge); }
+tr.expiring  { --fill: var(--expiring-fill);  --edge: var(--expiring-edge); }
+tr.low-stock { --fill: var(--low-stock-fill); --edge: var(--low-stock-edge); }
+
+tr:is(.critical, .expiring, .low-stock) td { background: var(--fill); }
+tr:is(.critical, .expiring, .low-stock) td:first-child { box-shadow: inset 3px 0 0 var(--edge); }
+tr:is(.critical, .expiring, .low-stock):hover td { filter: brightness(1.25); }
+
+/* ---------- billing table ---------- */
+.billing_table {
+    flex: 1;
+    margin: 20px;
+    border-radius: 10px;
+    background: var(--surface);
+}
+.billing_table input[type="text"] {
+    width: 72px;
+    padding: 4px 8px;
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    outline: none;
+    text-align: right;
+}
+.billing_table input[type="text"]:focus { border-color: var(--accent); }
+
+.billing_table tfoot td {
+    position: sticky;
+    bottom: 0;
+    padding: 12px 14px;
+    background: var(--surface-2);
+    color: var(--muted);
+    text-align: center;
+    border-top: 1px solid var(--border);
+    border-bottom: none;
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.15s, background 0.15s;
+}
+.billing_table tfoot .plus {
+    margin-right: 6px;
+    font-size: 18px;
+    font-weight: 600;
+    vertical-align: -1px;
+}
+.billing_table tfoot tr.add_row:hover td { color: var(--accent); background: var(--surface); }
+
+/* ---------- overlay + search window ---------- */
+.overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 100;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s;
+}
+.overlay.active { opacity: 1; pointer-events: auto; }
+
+.search_window {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 101;
+    width: min(900px, 92vw);
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.search { display: flex; gap: 8px; }
+.search input {
+    flex: 1;
+    padding: 10px 14px;
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    outline: none;
+}
+.search input:focus { border-color: var(--accent); }
+
+.search .clear {
+    padding: 0 16px;
+    background: var(--surface);
+    color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.search .clear:hover { color: var(--text); background: var(--surface-2); border-color: var(--accent); }

@@ -24,7 +24,12 @@ pub fn run() {
             Ok(())
         })
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![database::inventory_get_products, database::inventory_get_batches])
+        .invoke_handler(tauri::generate_handler![
+            database::inventory_get_products, 
+            database::inventory_get_batches, 
+            database::billing_get_products,
+            database::billing_get_batches
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
