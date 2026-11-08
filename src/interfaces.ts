@@ -58,3 +58,13 @@ export interface BillingBatchSearch {
     current_stock: string,
     in_expiry_period: boolean 
 }
+
+export interface UserData {
+    password: string,
+    account_type: string
+}
+
+export interface BillingOrderItems {
+    batch_id: number,
+    bought_quantity: string
+}

@@ -1,6 +1,6 @@
-use sqlx::MySqlPool;
+use sqlx::{MySqlPool, QueryBuilder};
 use tauri::State;
-use crate::types::{ BillingBatchSearch, BillingProductSearch, InventoryBatchRow, InventoryProductRow };
+use crate::types::{ BillingBatchSearch, BillingOrderItems, BillingProductSearch, InventoryBatchRow, InventoryProductRow, Users };
 
 /// get all the products from the database.
 #[tauri::command]
@@ -71,7 +71,7 @@ pub async fn billing_get_products(pool: State<'_, MySqlPool>, text: String) -> R
 
 #[tauri::command]
 pub async fn billing_get_batches(pool: State<'_, MySqlPool>, prod_id: i32) -> Result<Vec<BillingBatchSearch>, String> {
-    let rows = sqlx::query_as("
+    let rows = sqlx::query_as::<_, BillingBatchSearch>("
             SELECT b.batch_id, b.batch_number, b.unit_sell_price, b.expiry_date, b.current_stock,
                 b.expiry_date >= CURDATE() AND b.current_stock > 0 AND b.expiry_date <= DATE_ADD(CURDATE(), INTERVAL p.expiry_warning_days DAY) AS in_expiry_period
             FROM Batches b
@@ -83,6 +83,38 @@ pub async fn billing_get_batches(pool: State<'_, MySqlPool>, prod_id: i32) -> Re
         .await
         .map_err(|e| e.to_string())?;
     Ok(rows)
+}
+
+#[tauri::command]
+pub async fn login_data(pool: State<'_, MySqlPool>, text: String) -> Result<Users, String> {
+    let row = sqlx::query_as::<_, Users>("
+            SELECT password, account_type FROM Users WHERE user_name = ?
+        ")
+        .bind(text)
+        .fetch_one(pool.inner())
+        .await
+        .map_err(|e| e.to_string())?;
+    Ok(row)
+}
+
+pub async fn update_database(pool: State<'_, MySqlPool>, items:  Vec<BillingOrderItems>) -> Result<(), String> {
+    for item in &items {
+        let res = sqlx::query("
+                UPDATE Batches SET current_stock = current_stock - ? 
+                WHERE batch_id = ? AND current_stock >= ?;
+            ")
+            .bind(item.bought_quantity)
+            .bind(item.batch_id)
+            .bind(item.bought_quantity)
+            .execute(pool.inner())
+            .await
+            .map_err(|e| e.to_string())?;
+        
+        if res.rows_affected() != 1 {
+            return Err("Failed to update stock".to_string());
+        }
+    }
+    Ok(())
 }
 
 pub async fn deactivate_batches(pool: &MySqlPool) -> Result<u64, String> {

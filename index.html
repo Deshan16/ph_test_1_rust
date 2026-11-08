@@ -8,9 +8,24 @@
 		<script type="module" src="/src/main.ts" defer></script>
 	</head>
 	<body>
-		<div class="container">
-			<a href="src/inventory/page.html">Go to Inventory</a>
-			<a href="src/billing/page.html">Go to Billing</a>
-		</div>
+		<main class="login-wrap">
+			<form class="login-card" id="login-form" autocomplete="off">
+				<h1>Sign in</h1>
+
+				<div class="field">
+					<input id="username" name="username" type="text" placeholder=" " required autofocus />
+					<label for="username">Username</label>
+				</div>
+
+				<div class="field">
+					<input id="password" name="password" type="password" placeholder=" " required />
+					<label for="password">Password</label>
+				</div>
+
+				<p class="error" id="login-error" hidden>Invalid username or password</p>
+
+				<button type="submit" id="submit">Login</button>
+			</form>						
+		</main>
 	</body>
 </html>

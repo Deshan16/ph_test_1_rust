@@ -126,3 +126,19 @@ overlay.addEventListener("click", () => {
 });
 
 clear_button.addEventListener("click", clear_search_window);
+
+function updateTotal(): void {
+    let total = Decimal('0');
+    document.querySelectorAll<HTMLTableRowElement>("#billing_table tbody tr").forEach(row => {
+        total = total.add(Decimal(String(row.cells[5].textContent)));
+    });
+    document.getElementById("grand_total")!.textContent = String(total);
+}
+
+const billingBody = document.querySelector("#billing_table tbody")!;
+
+new MutationObserver(updateTotal).observe(billingBody, {
+    childList: true,
+    subtree: true,
+    characterData: true,
+});
