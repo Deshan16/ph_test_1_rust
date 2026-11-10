@@ -1,10 +1,10 @@
-use sqlx::{MySqlPool, QueryBuilder};
+use sqlx::MySqlPool;
 use tauri::State;
-use crate::types::{ BillingBatchSearch, BillingOrderItems, BillingProductSearch, InventoryBatchRow, InventoryProductRow, Users };
+use crate::{error::AppErrors, types::{ BillingBatchSearch, BillingOrderItems, BillingProductSearch, InventoryBatchRow, InventoryProductRow, Users }};
 
 /// get all the products from the database.
 #[tauri::command]
-pub async fn inventory_get_products(pool: State<'_, MySqlPool>, text: String) -> Result<Vec<InventoryProductRow>, String> {
+pub async fn inventory_get_products(pool: State<'_, MySqlPool>, text: String) -> Result<Vec<InventoryProductRow>, AppErrors> {
     let parameter = format!("%{}%", text);
     let rows = sqlx::query_as::<_, InventoryProductRow>("
             SELECT p.prod_id, p.prod_type, p.name, p.reorder_level,
@@ -24,13 +24,13 @@ pub async fn inventory_get_products(pool: State<'_, MySqlPool>, text: String) ->
         .bind(&parameter)
         .fetch_all(pool.inner())
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| AppErrors::FailedToGetDataFromDatabase(e.to_string()))?;
     Ok(rows)
 }
 
 /// get all the batches of a product bby searching for product id.
 #[tauri::command]
-pub async fn inventory_get_batches(pool: State<'_, MySqlPool>, prod_id: i32) -> Result<Vec<InventoryBatchRow>, String> {
+pub async fn inventory_get_batches(pool: State<'_, MySqlPool>, prod_id: i32) -> Result<Vec<InventoryBatchRow>, AppErrors> {
     let rows = sqlx::query_as::<_, InventoryBatchRow>("
             SELECT b.batch_id, b.batch_number, b.unit_bought_price, b.unit_sell_price, b.expiry_date, b.current_stock,
                 b.expiry_date >= CURDATE() AND b.current_stock > 0 AND b.expiry_date <= DATE_ADD(CURDATE(), INTERVAL p.expiry_warning_days DAY) AS in_expiry_period
@@ -41,12 +41,12 @@ pub async fn inventory_get_batches(pool: State<'_, MySqlPool>, prod_id: i32) -> 
         .bind(prod_id)
         .fetch_all(pool.inner())
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| AppErrors::FailedToGetDataFromDatabase(e.to_string()))?;
     Ok(rows)
 }
 
 #[tauri::command]
-pub async fn billing_get_products(pool: State<'_, MySqlPool>, text: String) -> Result<Vec<BillingProductSearch>, String> {
+pub async fn billing_get_products(pool: State<'_, MySqlPool>, text: String) -> Result<Vec<BillingProductSearch>, AppErrors> {
     let parameter = format!("%{}%", text);
     let rows = sqlx::query_as::<_, BillingProductSearch>("
             SELECT p.prod_id, p.prod_type, p.name,
@@ -65,12 +65,12 @@ pub async fn billing_get_products(pool: State<'_, MySqlPool>, text: String) -> R
         .bind(&parameter)
         .fetch_all(pool.inner())
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| AppErrors::FailedToGetDataFromDatabase(e.to_string()))?;
     Ok(rows)
 }
 
 #[tauri::command]
-pub async fn billing_get_batches(pool: State<'_, MySqlPool>, prod_id: i32) -> Result<Vec<BillingBatchSearch>, String> {
+pub async fn billing_get_batches(pool: State<'_, MySqlPool>, prod_id: i32) -> Result<Vec<BillingBatchSearch>, AppErrors> {
     let rows = sqlx::query_as::<_, BillingBatchSearch>("
             SELECT b.batch_id, b.batch_number, b.unit_sell_price, b.expiry_date, b.current_stock,
                 b.expiry_date >= CURDATE() AND b.current_stock > 0 AND b.expiry_date <= DATE_ADD(CURDATE(), INTERVAL p.expiry_warning_days DAY) AS in_expiry_period
@@ -81,7 +81,7 @@ pub async fn billing_get_batches(pool: State<'_, MySqlPool>, prod_id: i32) -> Re
         .bind(prod_id)
         .fetch_all(pool.inner())
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| AppErrors::FailedToGetDataFromDatabase(e.to_string()))?;
     Ok(rows)
 }
 
@@ -97,9 +97,10 @@ pub async fn login_data(pool: State<'_, MySqlPool>, text: String) -> Result<User
     Ok(row)
 }
 
-pub async fn update_database(pool: State<'_, MySqlPool>, items:  Vec<BillingOrderItems>) -> Result<(), String> {
+#[tauri::command]
+pub async fn update_database(pool: State<'_, MySqlPool>, items:  Vec<BillingOrderItems>) -> Result<(), AppErrors> {
     for item in &items {
-        let res = sqlx::query("
+        let _ = sqlx::query("
                 UPDATE Batches SET current_stock = current_stock - ? 
                 WHERE batch_id = ? AND current_stock >= ?;
             ")
@@ -108,23 +109,19 @@ pub async fn update_database(pool: State<'_, MySqlPool>, items:  Vec<BillingOrde
             .bind(item.bought_quantity)
             .execute(pool.inner())
             .await
-            .map_err(|e| e.to_string())?;
-        
-        if res.rows_affected() != 1 {
-            return Err("Failed to update stock".to_string());
-        }
+            .map_err(|e| AppErrors::FailedToUpdateDatabase(e.to_string()))?;
     }
     Ok(())
 }
 
-pub async fn deactivate_batches(pool: &MySqlPool) -> Result<u64, String> {
+pub async fn deactivate_batches(pool: &MySqlPool) -> Result<u64, AppErrors> {
     let result = sqlx::query("
-        UPDATE Batches SET is_active = FALSE
-        WHERE is_active = TRUE AND (current_stock <= 0 OR expiry_date < CURDATE())
+            UPDATE Batches SET is_active = FALSE
+            WHERE is_active = TRUE AND (current_stock <= 0 OR expiry_date < CURDATE())
         ")
         .execute(pool)
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| AppErrors::FailedToUpdateDatabase(e.to_string()))?;
     Ok(result.rows_affected())
 }
 

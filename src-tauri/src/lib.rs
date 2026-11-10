@@ -2,6 +2,9 @@ use sqlx::mysql::MySqlPoolOptions;
 use tauri::Manager;
 mod types;
 mod database;
+mod error;
+
+
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -17,7 +20,7 @@ pub fn run() {
             
             match tauri::async_runtime::block_on(database::deactivate_batches(&pool)) {
                 Ok(n) => println!("Deactivated {n} batches"),
-                Err(e) => eprintln!("Deactivate Failed {e}"),
+                Err(e) => eprintln!("Deactivate Failed {:?}", e),
             }
             
             app.manage(pool);
@@ -29,7 +32,8 @@ pub fn run() {
             database::inventory_get_batches, 
             database::billing_get_products,
             database::billing_get_batches,
-            database::login_data
+            database::login_data,
+            database::update_database
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

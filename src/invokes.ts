@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { InventoryProductRow, InventoryBatchRow, BillingProductSearch, BillingBatchSearch, UserData } from "./interfaces";
+import { InventoryProductRow, InventoryBatchRow, BillingProductSearch, BillingBatchSearch, UserData, BillingOrderItem } from "./interfaces";
 
 /**
  * 	A function wraps around the invoke for get product rows for inventory from database.
@@ -51,4 +51,8 @@ export function must_get<T extends Element>(selector: string): T {
 
 export function login_data(text: string): Promise<UserData> {
 	return invoke<UserData>("login_data", { text: text });
+}
+
+export function billingSendCart(batch_list: BillingOrderItem[]) {
+	return invoke<BillingOrderItem[]>("update_database", { items: batch_list })
 }

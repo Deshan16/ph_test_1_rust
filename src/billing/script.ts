@@ -1,6 +1,6 @@
 import Decimal from "decimal.js";
-import { billing_get_batches, billing_get_products, must_get } from "../invokes";
-import { BillingBatchSearch, BillingProductSearch } from "../interfaces";
+import { billing_get_batches, billing_get_products, billingSendCart, must_get } from "../invokes";
+import { BillingBatchSearch, BillingOrderItem, BillingProductSearch } from "../interfaces";
 
 const add_row_btn = must_get<HTMLTableRowElement>(".add_row");
 const search_window = must_get<HTMLDivElement>(".search_window");
@@ -13,6 +13,21 @@ const search_text = must_get<HTMLInputElement>("#search_text");
 const batch_table_box = must_get<HTMLDivElement>(".search_batch_results");
 const batch_tbody = must_get<HTMLTableSectionElement>("#batch_table tbody");
 const billing_tbody = must_get<HTMLTableSectionElement>("#billing_table tbody");
+const checkout = must_get<HTMLButtonElement>("#checkout");
+const cancel = must_get<HTMLButtonElement>("#cancel_order");
+const checkout_window = must_get<HTMLDivElement>(".checkout_window");
+
+const cart = {
+    items: [] as BillingOrderItem[],
+    on_change: () => {},
+    add(item: BillingOrderItem) { this.items.push(item); this.on_change() },
+    clear() { this.items = []; this.on_change() }
+}
+
+cart.on_change = () => {
+    checkout.disabled = cart.items.length === 0;
+    cancel.disabled = cart.items.length === 0;
+}
 
 function clear_search_window(): void {
     search_text.value = '';
@@ -57,56 +72,68 @@ function batch_row_class_picker(batch_row: BillingBatchSearch): string | null {
 }
 
 async function load_data(text: string) {
-    const product_rows = await billing_get_products(text);
-    product_tbody.innerHTML = '';
-    product_rows.forEach((product_row) => {
-        const product_trow = product_tbody.insertRow();
-        
-        product_trow.insertCell().innerText = String(product_row.prod_id);
-        product_trow.insertCell().innerText = product_row.prod_type === "gro" ? "Grocery" : "Medicine";
-        product_trow.insertCell().innerText = product_row.name;
-        product_trow.insertCell().innerText = product_row.generic_name ? product_row.generic_name : '-';
-        product_trow.insertCell().innerText = product_row.company ? product_row.company : '-';
-        product_trow.insertCell().innerText = product_row.form ? product_row.form : '-';
-        product_trow.insertCell().innerText = product_row.strength ? product_row.strength : '-';
-        
-        const cls = product_row_class_picker(product_row);
-        if (cls) product_trow.classList.add(cls);
-        
-        product_trow.addEventListener("click", async () => {
-            batch_table_box.hidden = false;
-            batch_tbody.innerHTML = '';
-            const batch_rows = await billing_get_batches(product_row.prod_id);
-            batch_rows.forEach((batch_row) => {
-                const batch_trow = batch_tbody.insertRow();
-                batch_trow.insertCell().innerText = String(batch_row.batch_id);
-                batch_trow.insertCell().innerText = batch_row.batch_number;
-                batch_trow.insertCell().innerText = batch_row.unit_sell_price;
-                batch_trow.insertCell().innerText = batch_row.expiry_date;
-                batch_trow.insertCell().innerText = batch_row.current_stock;
-                const cls = batch_row_class_picker(batch_row);
-                if (cls) batch_trow.classList.add(cls);
-                batch_trow.addEventListener("click", () => {
-                    close_search_window();
-                    const billing_trow = billing_tbody.insertRow();
-                    
-                    billing_trow.insertCell().innerText = String(product_row.prod_id);
-                    billing_trow.insertCell().innerText = product_row.prod_type === "gro" ? "Grocery" : "Medicine";
-                    const name = billing_trow.insertCell();
-                    name.innerText = product_row.name;;
-                    name.title = `${product_row.name} ${product_row.generic_name} ${product_row.company} ${product_row.strength}`;
-                    billing_trow.insertCell().innerText = batch_row.unit_sell_price;
-                    const inp = create_quantity_input();
-                    billing_trow.insertCell().appendChild(inp);
-                    const total_ = billing_trow.insertCell()
-                    inp.focus();
-                    inp.addEventListener("blur", () => {
-                        total_.innerText = String(Decimal(inp.value).times(Decimal(batch_row.unit_sell_price)));
+    try {
+        const product_rows = await billing_get_products(text);
+        product_tbody.innerHTML = '';
+        product_rows.forEach((product_row) => {
+            const product_trow = product_tbody.insertRow();
+            
+            product_trow.insertCell().innerText = String(product_row.prod_id);
+            product_trow.insertCell().innerText = product_row.prod_type === "gro" ? "Grocery" : "Medicine";
+            product_trow.insertCell().innerText = product_row.name;
+            product_trow.insertCell().innerText = product_row.generic_name ? product_row.generic_name : '-';
+            product_trow.insertCell().innerText = product_row.company ? product_row.company : '-';
+            product_trow.insertCell().innerText = product_row.form ? product_row.form : '-';
+            product_trow.insertCell().innerText = product_row.strength ? product_row.strength : '-';
+            
+            const cls = product_row_class_picker(product_row);
+            if (cls) product_trow.classList.add(cls);
+            
+            product_trow.addEventListener("click", async () => {
+                batch_table_box.hidden = false;
+                batch_tbody.innerHTML = '';
+                const batch_rows = await billing_get_batches(product_row.prod_id);
+                batch_rows.forEach((batch_row) => {
+                    const batch_trow = batch_tbody.insertRow();
+                    batch_trow.insertCell().innerText = String(batch_row.batch_id);
+                    batch_trow.insertCell().innerText = batch_row.batch_number;
+                    batch_trow.insertCell().innerText = batch_row.unit_sell_price;
+                    batch_trow.insertCell().innerText = batch_row.expiry_date;
+                    batch_trow.insertCell().innerText = batch_row.current_stock;
+                    const cls = batch_row_class_picker(batch_row);
+                    if (cls) batch_trow.classList.add(cls);
+                    batch_trow.addEventListener("click", () => {
+                        close_search_window();
+                        const billing_trow = billing_tbody.insertRow();
+                        
+                        billing_trow.insertCell().innerText = String(product_row.prod_id);
+                        billing_trow.insertCell().innerText = product_row.prod_type === "gro" ? "Grocery" : "Medicine";
+                        const name = billing_trow.insertCell();
+                        name.innerText = product_row.name;;
+                        name.title = `${product_row.name} ${product_row.generic_name} ${product_row.company} ${product_row.strength}`;
+                        billing_trow.insertCell().innerText = batch_row.unit_sell_price;
+                        const inp = create_quantity_input();
+                        billing_trow.insertCell().appendChild(inp);
+                        const total_ = billing_trow.insertCell()
+                        inp.focus();
+                        let prod_row: BillingOrderItem = {
+                            batch_id: batch_row.batch_id,
+                            bought_quantity: inp.value
+                        }
+                        inp.addEventListener("blur", () => {
+                            const x = inp.value;
+                            total_.innerText = String(Decimal(x).times(Decimal(batch_row.unit_sell_price)));
+                            prod_row.bought_quantity = x;
+                        });
+                        
+                        cart.add(prod_row);
                     });
                 });
             });
         });
-    });
+    } catch (err) {
+        alert(err);
+    }
 }
 
 add_row_btn.addEventListener("click", () => {
@@ -127,6 +154,23 @@ overlay.addEventListener("click", () => {
 
 clear_button.addEventListener("click", clear_search_window);
 
+cancel.addEventListener("click", () => {
+    billing_tbody.innerHTML = '';
+    cart.clear();
+    cancel.disabled = true;
+    checkout.disabled = true;
+});
+
+checkout.addEventListener("click", async () => {
+    try {
+        billing_tbody.innerHTML = '';
+        checkout_window.hidden = false;
+        // await billingSendCart(cart.items);
+    } catch (err) {
+        alert(err)
+    }
+});
+
 function updateTotal(): void {
     let total = Decimal('0');
     document.querySelectorAll<HTMLTableRowElement>("#billing_table tbody tr").forEach(row => {
@@ -135,9 +179,7 @@ function updateTotal(): void {
     document.getElementById("grand_total")!.textContent = String(total);
 }
 
-const billingBody = document.querySelector("#billing_table tbody")!;
-
-new MutationObserver(updateTotal).observe(billingBody, {
+new MutationObserver(updateTotal).observe(billing_tbody, {
     childList: true,
     subtree: true,
     characterData: true,

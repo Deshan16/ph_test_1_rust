@@ -64,7 +64,7 @@ export interface UserData {
     account_type: string
 }
 
-export interface BillingOrderItems {
+export interface BillingOrderItem {
     batch_id: number,
     bought_quantity: string
 }
