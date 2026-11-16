@@ -54,6 +54,11 @@
             <input type="text" id="search_text" placeholder="Type here to search">
             <button class="clear" id="clear" hidden>Clear</button>
         </div>
+        <div class="legend">
+            <span class="legend_item critical">Critical</span>
+            <span class="legend_item expiring">Expiring soon</span>
+            <span class="legend_item low-stock">Low stock</span>
+        </div>
         <div class="search_table_box" hidden>
             <table class="search_table">
                 <thead>
@@ -130,6 +135,17 @@
         <button type="button" class="row_menu_item" data-action="edit">Edit</button>
         <!-- <button type="button" class="row_menu_item" data-action="discount">Discount</button> -->
         <button type="button" class="row_menu_item row_menu_danger" data-action="remove">Remove</button>
+    </div>
+    <!-- next to .checkout_window -->
+    <div class="confirm_box" id="cancel_confirm" role="alertdialog" aria-labelledby="confirm_title" hidden>
+        <div class="confirm_body">
+            <span class="confirm_title" id="confirm_title">Cancel this order?</span>
+            <span class="confirm_text">All items will be removed from the bill.</span>
+        </div>
+        <div class="confirm_footer">
+            <button type="button" class="btn" id="confirm_no">Keep order</button>
+            <button type="button" class="btn btn_danger" id="confirm_yes">Cancel order</button>
+        </div>
     </div>
 </body>
 </html>

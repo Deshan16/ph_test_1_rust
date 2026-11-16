@@ -18,6 +18,7 @@ const checkout = mustGet<HTMLButtonElement>("#checkout");
 const checkoutButton = mustGet<HTMLButtonElement>("#checkout");
 const cancelButton = mustGet<HTMLButtonElement>("#cancel_order");
 const itemRowOptionMenu = mustGet<HTMLDivElement>("#row_menu");
+const cancelPopUpBox = mustGet<HTMLDivElement>("#cancel_confirm");
 
 /**
  *  Current active( just clicked ) row in the billing table.
@@ -172,6 +173,7 @@ function billingRowBuilder(billTableRow: HTMLTableRowElement, prodRow: BillingPr
     const input = quantityInputBuilder();
     billTableRow.insertCell().appendChild(input);
     input.focus();
+    input.select();
     
     const totalCell = billTableRow.insertCell();
     
@@ -281,7 +283,10 @@ function closeSearchWindow(): void {
     overlay.classList.remove("active");
 }
 
-overlay.addEventListener("click", closeSearchWindow);
+overlay.addEventListener("click", () => {
+    if (!searchWindow.hidden) closeSearchWindow();
+    if (!cancelPopUpBox.hidden) closeCancelOrderPopUp();
+});
 
 new MutationObserver(calculateTotal).observe(billingTable, {
     childList: true,
@@ -303,3 +308,21 @@ function calculateTotal(): void {
 document.addEventListener("click", () => {
     itemRowOptionMenu.hidden = true;
 });
+
+mustGet<HTMLButtonElement>("#cancel_order").addEventListener("click", () => {
+    cancelPopUpBox.hidden = false;
+    overlay.classList.add("active");
+});
+
+mustGet<HTMLButtonElement>("#confirm_yes").addEventListener("click", () => {
+    cart.clear();
+    billingTable.innerHTML = '';
+    closeCancelOrderPopUp();
+});
+
+mustGet<HTMLButtonElement>("#confirm_no").addEventListener("click", closeCancelOrderPopUp);
+
+function closeCancelOrderPopUp(): void {
+    cancelPopUpBox.hidden = true;
+    overlay.classList.remove("active");
+}
