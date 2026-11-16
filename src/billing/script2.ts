@@ -18,6 +18,12 @@ const checkoutButton = mustGet<HTMLButtonElement>("#checkout");
 const cancelButton = mustGet<HTMLButtonElement>("#cancel_order");
 const itemRowOptionMenu = mustGet<HTMLDivElement>("#row_menu");
 const cancelPopUpBox = mustGet<HTMLDivElement>("#cancel_confirm");
+const checkoutWindow = mustGet<HTMLDivElement>(".checkout_window");
+const checkoutWindowAmountInput = mustGet<HTMLInputElement>("#amount_paid");
+const grandTotalField = mustGet<HTMLSpanElement>("#grand_total");
+const checkoutWindowNextCustomerButton = mustGet<HTMLButtonElement>("#next_customer");
+const checkoutWindowItemCount = mustGet<HTMLSpanElement>("#checkout_items");
+const checkoutWindowTotal = mustGet<HTMLSpanElement>("#checkout_total");
 
 /**
  *  Current active( just clicked ) row in the billing table.
@@ -200,12 +206,7 @@ function quantityInputBuilder() {
     const input = document.createElement("input");
     input.type = "text";
     input.value = '1';
-    input.addEventListener("input", function () {
-        let cleaned = this.value.replace(/[^0-9.]/g, '');
-        const parts = cleaned.split('.');
-        if (parts.length > 2) cleaned = parts[0] + '.' + parts.slice(1).join('');
-        this.value = cleaned;
-    });
+    input.addEventListener("input", () => inputFilter(input));
     
     input.addEventListener("keydown", (event: KeyboardEvent) => {
         if (event.key === "Enter") input.blur();
@@ -301,7 +302,7 @@ function calculateTotal(): void {
     document.querySelectorAll<HTMLTableRowElement>("#billing_table tbody tr").forEach((row) => {
         total = total.add(Decimal(String(row.cells[5].textContent)));
     });
-    mustGet<HTMLSpanElement>("#grand_total").textContent = total.toFixed(2);
+    grandTotalField.textContent = total.toFixed(2);
 }
 
 document.addEventListener("click", () => {
@@ -324,4 +325,60 @@ mustGet<HTMLButtonElement>("#confirm_no").addEventListener("click", closeCancelO
 function closeCancelOrderPopUp(): void {
     cancelPopUpBox.hidden = true;
     overlay.classList.remove("active");
+}
+
+checkoutButton.addEventListener("click", () => {
+    checkoutWindow.hidden = false;
+    overlay.classList.add("active");
+    checkoutWindowItemCount.innerText = String(cart.items.length);
+    checkoutWindowTotal.innerText = grandTotalField.textContent;
+});
+
+mustGet<HTMLButtonElement>("#cancel_checkout").addEventListener("click", () => {
+    billingTable.innerHTML = '';
+    cart.clear();
+    closeCheckoutWindow();
+});
+
+mustGet<HTMLButtonElement>("#checkout_close").addEventListener("click", closeCheckoutWindow);
+
+function closeCheckoutWindow(): void {
+    checkoutWindow.hidden = true;
+    overlay.classList.remove("active");
+}
+
+mustGet<HTMLButtonElement>("#next_customer").addEventListener("click", () => {
+
+});
+
+checkoutWindowAmountInput.addEventListener("input", () => inputFilter(checkoutWindowAmountInput));
+
+checkoutWindowAmountInput.addEventListener("keydown", (event: KeyboardEvent) => {
+    if (event.key === "Enter") {
+        const paid = Decimal(checkoutWindowAmountInput.value);
+        const total = Decimal(grandTotalField.textContent);
+        const change = paid.minus(total);
+        if (change.isNeg()) {
+            mustGet<HTMLSpanElement>("#change_amount").innerText = "Error";
+            checkoutWindowAmountInput.select();
+            checkoutWindowNextCustomerButton.disabled = true;
+            return
+        }
+        mustGet<HTMLSpanElement>("#change_amount").innerText = change.toFixed(2);
+        checkoutWindowAmountInput.blur();
+        checkoutWindowNextCustomerButton.disabled = false;
+    }
+});
+
+mustGet<HTMLSelectElement>("#payment_method").addEventListener("change", () => {
+    const isCard = mustGet<HTMLSelectElement>("#payment_method").value === "card";
+    checkoutWindowAmountInput.disabled = isCard;
+    if (isCard) checkoutWindowAmountInput.value = '';
+});
+
+function inputFilter(input: HTMLInputElement): void {
+    let cleaned = input.value.replace(/[^0-9.]/g, '');
+    const parts = cleaned.split('.');
+    if (parts.length > 2) cleaned = parts[0] + '.' + parts.slice(1).join('');
+    input.value = cleaned;
 }
