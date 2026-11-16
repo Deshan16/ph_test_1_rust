@@ -336,3 +336,49 @@ tr:is(.critical, .expiring, .low-stock):hover td { filter: brightness(1.25); }
   border-top: 1px solid var(--border);
 }
 .checkout_footer .btn { width: 100%; }
+
+/* ---------- row options button ---------- */
+.row_menu_btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 18px;
+    line-height: 1;
+    padding: 4px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: color 0.15s, background 0.15s;
+}
+.row_menu_btn:hover { color: var(--text); background: var(--surface-2); }
+.row_menu_btn:focus-visible { outline: 1px solid var(--accent); }
+
+/* ---------- row options menu ---------- */
+.row_menu {
+    position: fixed;          /* escapes the table's overflow clipping */
+    z-index: 50;              /* below overlay (100) and the windows (101) */
+    min-width: 150px;
+    padding: 4px;
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.row_menu_item {
+    padding: 8px 12px;
+    background: none;
+    border: none;
+    border-radius: 6px;
+    color: var(--text);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.row_menu_item:hover,
+.row_menu_item:focus-visible { background: var(--surface-2); outline: none; }
+
+.row_menu_danger { color: var(--critical-edge); }
+.row_menu_danger:hover { background: var(--critical-fill); }

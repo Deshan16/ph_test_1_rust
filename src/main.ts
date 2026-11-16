@@ -1,9 +1,9 @@
-import { inventory_get_batches, inventory_get_products, login_data, must_get } from "./invokes";
+import { inventory_get_batches, inventory_get_products, login_data, mustGet } from "./functions";
 
-const username = must_get<HTMLInputElement>("#username");
-const password = must_get<HTMLInputElement>("#password");
+const username = mustGet<HTMLInputElement>("#username");
+const password = mustGet<HTMLInputElement>("#password");
 
-must_get<HTMLButtonElement>("#submit").addEventListener("click", async () => {
+mustGet<HTMLButtonElement>("#submit").addEventListener("click", async () => {
 	const loginData = await login_data(username.value);
 	if (loginData.password = password.value) {
 		window.location.href = "src/billing/page.html";

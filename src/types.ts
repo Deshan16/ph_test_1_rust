@@ -38,7 +38,7 @@ export const LABELS: Record<string, string> = {
     "low-stock": "Stock below reorder level"
 }
 
-export interface BillingProductSearch {
+export interface BillingProductRow {
     prod_id: number,
     prod_type: string,
     name: string,
@@ -50,7 +50,7 @@ export interface BillingProductSearch {
     form: string | null
 }
 
-export interface BillingBatchSearch {
+export interface BillingBatchRow {
     batch_id: number,
     batch_number: string,
     unit_sell_price: string,

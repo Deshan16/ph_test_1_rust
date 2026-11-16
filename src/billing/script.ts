@@ -1,21 +1,21 @@
 import Decimal from "decimal.js";
-import { billing_get_batches, billing_get_products, billingSendCart, must_get } from "../invokes";
-import { BillingBatchSearch, BillingOrderItem, BillingProductSearch } from "../interfaces";
+import { billingGetBatches, billingGetProducts, mustGet } from "../functions";
+import { BillingBatchRow, BillingOrderItem, BillingProductRow } from "../types";
 
-const add_row_btn = must_get<HTMLTableRowElement>(".add_row");
-const search_window = must_get<HTMLDivElement>(".search_window");
-const overlay = must_get<HTMLDivElement>(".overlay");
-const product_search_bar = must_get<HTMLDivElement>("#search_text");
-const product_table_box = must_get<HTMLDivElement>(".search_table_box");
-const product_tbody = must_get<HTMLTableSectionElement>(".search_table tbody");
-const clear_button = must_get<HTMLButtonElement>("#clear");
-const search_text = must_get<HTMLInputElement>("#search_text");
-const batch_table_box = must_get<HTMLDivElement>(".search_batch_results");
-const batch_tbody = must_get<HTMLTableSectionElement>("#batch_table tbody");
-const billing_tbody = must_get<HTMLTableSectionElement>("#billing_table tbody");
-const checkout = must_get<HTMLButtonElement>("#checkout");
-const cancel = must_get<HTMLButtonElement>("#cancel_order");
-const checkout_window = must_get<HTMLDivElement>(".checkout_window");
+const add_row_btn = mustGet<HTMLTableRowElement>(".add_row");
+const search_window = mustGet<HTMLDivElement>(".search_window");
+const overlay = mustGet<HTMLDivElement>(".overlay");
+const product_search_bar = mustGet<HTMLDivElement>("#search_text");
+const product_table_box = mustGet<HTMLDivElement>(".search_table_box");
+const product_tbody = mustGet<HTMLTableSectionElement>(".search_table tbody");
+const clear_button = mustGet<HTMLButtonElement>("#clear");
+const search_text = mustGet<HTMLInputElement>("#search_text");
+const batch_table_box = mustGet<HTMLDivElement>(".search_batch_results");
+const batch_tbody = mustGet<HTMLTableSectionElement>("#batch_table tbody");
+const billing_tbody = mustGet<HTMLTableSectionElement>("#billing_table tbody");
+const checkout = mustGet<HTMLButtonElement>("#checkout");
+const cancel = mustGet<HTMLButtonElement>("#cancel_order");
+const checkout_window = mustGet<HTMLDivElement>(".checkout_window");
 
 const cart = {
     items: [] as BillingOrderItem[],
@@ -54,7 +54,7 @@ function create_quantity_input(): HTMLInputElement {
  *  @param product_row ProductRow that holds the info about the current row
  *  @returns class name. if nothing is wrong null
  */
-function product_row_class_picker(product_row: BillingProductSearch): string | null {
+function product_row_class_picker(product_row: BillingProductRow): string | null {
     if (product_row.in_expiry_period && product_row.low_stock) return "critical";
     if (product_row.in_expiry_period) return "expiring";
     if (product_row.low_stock) return "low-stock";
@@ -66,14 +66,14 @@ function product_row_class_picker(product_row: BillingProductSearch): string | n
  *  @param batch_row BatchRow that holds the info about the batch.
  *  @returns class name. if nothing is wrong null
  */
-function batch_row_class_picker(batch_row: BillingBatchSearch): string | null {
+function batch_row_class_picker(batch_row: BillingBatchRow): string | null {
     if (batch_row.in_expiry_period) return "expiring";
     return null;
 }
 
 async function load_data(text: string) {
     try {
-        const product_rows = await billing_get_products(text);
+        const product_rows = await billingGetProducts(text);
         product_tbody.innerHTML = '';
         product_rows.forEach((product_row) => {
             const product_trow = product_tbody.insertRow();
@@ -92,7 +92,7 @@ async function load_data(text: string) {
             product_trow.addEventListener("click", async () => {
                 batch_table_box.hidden = false;
                 batch_tbody.innerHTML = '';
-                const batch_rows = await billing_get_batches(product_row.prod_id);
+                const batch_rows = await billingGetBatches(product_row.prod_id);
                 batch_rows.forEach((batch_row) => {
                     const batch_trow = batch_tbody.insertRow();
                     batch_trow.insertCell().innerText = String(batch_row.batch_id);

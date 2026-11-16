@@ -1,34 +1,13 @@
-import { InventoryBatchRow, LABELS, InventoryProductRow } from "../interfaces";
-import { inventory_get_batches, inventory_get_products, must_get } from "../invokes";
+import { LABELS, InventoryProductRow } from "../types";
+import { batchRowColorPicker, inventory_get_batches, inventory_get_products, mustGet, prodRowColorPicker } from "../functions";
 
-const product_table_body = must_get<HTMLTableSectionElement>("#invn_table tbody");
-const text_input = must_get<HTMLInputElement>("#search_text");
-const clear_button = must_get<HTMLButtonElement>(".clear");
-const batch_window = must_get<HTMLDivElement>(".batch_window");
-const batch_tbody = must_get<HTMLTableSectionElement>("#batch_table tbody");
-const overlay = must_get<HTMLDivElement>(".overlay");
+const product_table_body = mustGet<HTMLTableSectionElement>("#invn_table tbody");
+const text_input = mustGet<HTMLInputElement>("#search_text");
+const clear_button = mustGet<HTMLButtonElement>(".clear");
+const batch_window = mustGet<HTMLDivElement>(".batch_window");
+const batch_tbody = mustGet<HTMLTableSectionElement>("#batch_table tbody");
+const overlay = mustGet<HTMLDivElement>(".overlay");
 
-/**
- *  Helper function to change styles of rows displayed to identify their state.
- *  @param product_row ProductRow that holds the info about the current row
- *  @returns class name. if nothing is wrong null
- */
-function product_row_class_picker(product_row: InventoryProductRow): string | null {
-    if (product_row.in_expiry_period && product_row.low_stock) return "critical";
-    if (product_row.in_expiry_period) return "expiring";
-    if (product_row.low_stock) return "low-stock";
-    return null;
-}
-
-/**
- *  Helper function to change styles of rows displayed to identify their state.
- *  @param batch_row BatchRow that holds the info about the batch.
- *  @returns class name. if nothing is wrong null
- */
-function batch_row_class_picker(batch_row: InventoryBatchRow): string | null {
-    if (batch_row.in_expiry_period) return "expiring";
-    return null;
-}
 
 /**
  *  Load the data table.
@@ -53,7 +32,7 @@ async function load_table(text:string) {
         product_trow.insertCell().innerText = product_row.stock;
         product_trow.insertCell().innerText = product_row.reorder_level;
         
-        const cls = product_row_class_picker(product_row);
+        const cls = prodRowColorPicker(product_row);
         
         if (cls) {
             product_trow.classList.add(cls);   // Add to the class list to visually identify the state of the row.
@@ -77,7 +56,7 @@ async function load_table(text:string) {
                 batch_trow.insertCell().innerText = batch_row.expiry_date;
                 batch_trow.insertCell().innerText = batch_row.current_stock;
                 
-                const cls = batch_row_class_picker(batch_row);
+                const cls = batchRowColorPicker(batch_row);
                 if (cls) batch_trow.classList.add(cls);
             });
         });
