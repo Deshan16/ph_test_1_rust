@@ -14,7 +14,6 @@ const searchText = mustGet<HTMLInputElement>("#search_text");
 const batchTableBox = mustGet<HTMLDivElement>(".search_batch_results");
 const batchTable = mustGet<HTMLTableSectionElement>("#batch_table tbody");
 const billingTable = mustGet<HTMLTableSectionElement>("#billing_table tbody");
-const checkout = mustGet<HTMLButtonElement>("#checkout");
 const checkoutButton = mustGet<HTMLButtonElement>("#checkout");
 const cancelButton = mustGet<HTMLButtonElement>("#cancel_order");
 const itemRowOptionMenu = mustGet<HTMLDivElement>("#row_menu");
