@@ -30,7 +30,8 @@ pub fn run() {
             database::billing_get_products,
             database::billing_get_batches,
             database::login_data,
-            database::update_database
+            database::update_database,
+            database::generate_reorder_list
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

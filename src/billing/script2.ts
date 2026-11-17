@@ -444,6 +444,8 @@ document.addEventListener("keydown", (event: KeyboardEvent) => {
 });
 
 drawer.querySelectorAll<HTMLButtonElement>(".drawer_item").forEach((btn) => {
-    void openWindow(btn.getAttribute("data-label")!, btn.getAttribute("data-url")!, btn.getAttribute("data-title")!);
-    toggleDrawer(false);
+    btn.addEventListener("click", () => {
+        void openWindow(btn.getAttribute("data-label")!, btn.getAttribute("data-url")!, btn.getAttribute("data-title")!);
+        toggleDrawer(false);
+    });
 });

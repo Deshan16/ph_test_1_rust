@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { InventoryProductRow, InventoryBatchRow, BillingProductRow, BillingBatchRow, UserData, BillingOrder, BillingOrderInfo } from "./types";
+import { InventoryProductRow, InventoryBatchRow, BillingProductRow, BillingBatchRow, UserData, BillingOrder, BillingOrderInfo, ReorderItems } from "./types";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 
 /**
@@ -93,4 +93,8 @@ export async function openWindow(label: string, url: string, title: string) {
 	
 	const win = new WebviewWindow(label, { url, title, width: 1000, height: 650, center: true });
 	win.once("tauri://error", (e) => console.error(`Failed to open ${label}`, e));
+}
+
+export function getReorderItems(): Promise<ReorderItems[]> {
+	return invoke<ReorderItems[]>("generate_reorder_list");
 }
