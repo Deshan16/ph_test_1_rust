@@ -1,6 +1,7 @@
-import { BillingBatchRow, BillingOrderItem, BillingProductRow } from "../types";
-import { batchRowColorPicker, billingGetBatches, billingGetProducts, mustGet, prodRowColorPicker } from "../functions";
+import { BillingBatchRow, BillingOrder, BillingOrderItem, BillingProductRow, LABELS } from "../types";
+import { batchRowColorPicker, billingGetBatches, billingGetProducts, billingUpdateDatabase, mustGet, openWindow, prodRowColorPicker } from "../functions";
 import Decimal from "decimal.js";
+import { makeReceipts, saveReceipt } from "./receipts";
 
 
 
@@ -24,6 +25,10 @@ const grandTotalField = mustGet<HTMLSpanElement>("#grand_total");
 const checkoutWindowNextCustomerButton = mustGet<HTMLButtonElement>("#next_customer");
 const checkoutWindowItemCount = mustGet<HTMLSpanElement>("#checkout_items");
 const checkoutWindowTotal = mustGet<HTMLSpanElement>("#checkout_total");
+const checkoutWindowPaymentMethod = mustGet<HTMLSelectElement>("#payment_method");
+const checkoutWindowChangeLabel = mustGet<HTMLSpanElement>("#change_amount");
+const drawer = mustGet<HTMLElement>("#drawer");
+
 
 /**
  *  Current active( just clicked ) row in the billing table.
@@ -146,7 +151,10 @@ function prodRowBuilder(prodTableRow: HTMLTableRowElement, prodRow: BillingProdu
     prodTableRow.insertCell().innerText = prodRow.strength ? prodRow.strength : '-';
     
     const cls = prodRowColorPicker(prodRow);
-    if (cls) prodTableRow.classList.add(cls);
+    if (cls) {
+        prodTableRow.classList.add(cls);
+        prodTableRow.title = LABELS[cls];
+    }
 }
 
 /**
@@ -162,7 +170,10 @@ function batchRowBuilder(batchTableRow: HTMLTableRowElement, batchRow: BillingBa
     batchTableRow.insertCell().innerText = batchRow.current_stock;
     
     const cls = batchRowColorPicker(batchRow);
-    if (cls) batchTableRow.classList.add(cls);
+    if (cls) {
+        batchTableRow.classList.add(cls);
+        batchTable.title = LABELS[cls];
+    }
 }
 
 function billingRowBuilder(billTableRow: HTMLTableRowElement, prodRow: BillingProductRow, batchRow: BillingBatchRow): void {
@@ -182,7 +193,11 @@ function billingRowBuilder(billTableRow: HTMLTableRowElement, prodRow: BillingPr
     
     const totalCell = billTableRow.insertCell();
     
-    cart.add({ batch_id: batchRow.batch_id, bought_quantity: input.value });
+    cart.add({ batch_id: batchRow.batch_id, 
+        bought_quantity: input.value, 
+        name: `${prodRow.name} ${prodRow.generic_name} ${prodRow.company}`,
+        unit_price: batchRow.unit_sell_price
+    });
     
     input.addEventListener("blur", () => {
         const parsedValue = parseFloat(input.value);
@@ -286,6 +301,7 @@ function closeSearchWindow(): void {
 overlay.addEventListener("click", () => {
     if (!searchWindow.hidden) closeSearchWindow();
     if (!cancelPopUpBox.hidden) closeCancelOrderPopUp();
+    toggleDrawer(false);
 });
 
 new MutationObserver(calculateTotal).observe(billingTable, {
@@ -343,12 +359,40 @@ mustGet<HTMLButtonElement>("#cancel_checkout").addEventListener("click", () => {
 mustGet<HTMLButtonElement>("#checkout_close").addEventListener("click", closeCheckoutWindow);
 
 function closeCheckoutWindow(): void {
+    checkoutWindowAmountInput.value = '';
+    checkoutWindowChangeLabel.innerHTML = '0.00';
     checkoutWindow.hidden = true;
+    checkoutWindowPaymentMethod.value = "card";
+    checkoutWindowAmountInput.disabled = false;
     overlay.classList.remove("active");
 }
 
-mustGet<HTMLButtonElement>("#next_customer").addEventListener("click", () => {
-
+mustGet<HTMLButtonElement>("#next_customer").addEventListener("click", async () => {
+    try {
+        const total = grandTotalField.textContent;
+        const method = checkoutWindowPaymentMethod.value
+        const status = "completed";
+        const paid = checkoutWindowAmountInput.value;
+        const change = checkoutWindowChangeLabel.textContent;
+        
+        const order: BillingOrder = {
+            total_amount: total,
+            payment_method: method,
+            status: status,
+            items: cart.items
+        }
+        
+        const orderInfo = await billingUpdateDatabase(order);
+        
+        const bytes = makeReceipts(orderInfo, order, paid, change);
+        await saveReceipt(bytes, orderInfo.order_id);
+        
+        closeCheckoutWindow();
+        cart.clear();
+        billingTable.innerHTML = '';
+    } catch (err) {
+        alert(err);
+    }
 });
 
 checkoutWindowAmountInput.addEventListener("input", () => inputFilter(checkoutWindowAmountInput));
@@ -359,21 +403,24 @@ checkoutWindowAmountInput.addEventListener("keydown", (event: KeyboardEvent) => 
         const total = Decimal(grandTotalField.textContent);
         const change = paid.minus(total);
         if (change.isNeg()) {
-            mustGet<HTMLSpanElement>("#change_amount").innerText = "Error";
+            checkoutWindowChangeLabel.innerText = "Error";
             checkoutWindowAmountInput.select();
             checkoutWindowNextCustomerButton.disabled = true;
             return
         }
-        mustGet<HTMLSpanElement>("#change_amount").innerText = change.toFixed(2);
+        checkoutWindowChangeLabel.innerText = change.toFixed(2);
         checkoutWindowAmountInput.blur();
         checkoutWindowNextCustomerButton.disabled = false;
     }
 });
 
-mustGet<HTMLSelectElement>("#payment_method").addEventListener("change", () => {
-    const isCard = mustGet<HTMLSelectElement>("#payment_method").value === "card";
+checkoutWindowPaymentMethod.addEventListener("change", () => {
+    const isCard = checkoutWindowPaymentMethod.value === "card";
     checkoutWindowAmountInput.disabled = isCard;
-    if (isCard) checkoutWindowAmountInput.value = '';
+    if (isCard) {
+        checkoutWindowAmountInput.value = '';
+        checkoutWindowChangeLabel.innerText = "0.00";
+    }
 });
 
 function inputFilter(input: HTMLInputElement): void {
@@ -382,3 +429,21 @@ function inputFilter(input: HTMLInputElement): void {
     if (parts.length > 2) cleaned = parts[0] + '.' + parts.slice(1).join('');
     input.value = cleaned;
 }
+
+mustGet<HTMLButtonElement>("#menu_btn").addEventListener("click", () => toggleDrawer(true));
+mustGet<HTMLButtonElement>("#drawer_close").addEventListener("click", () => toggleDrawer(false));
+
+function toggleDrawer(open: boolean) {
+    drawer.classList.toggle("open", open);
+    overlay.classList.toggle("active", open);
+    drawer.setAttribute("aria-hidden", String(!open));
+}
+
+document.addEventListener("keydown", (event: KeyboardEvent) => {
+    if (event.key === "Escape") toggleDrawer(false);
+});
+
+drawer.querySelectorAll<HTMLButtonElement>(".drawer_item").forEach((btn) => {
+    void openWindow(btn.getAttribute("data-label")!, btn.getAttribute("data-url")!, btn.getAttribute("data-title")!);
+    toggleDrawer(false);
+});

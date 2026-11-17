@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Billing</title>
-    <link rel="stylesheet" href="billing.css">
     <link rel="stylesheet" href="style.css">
     <script type="module" src="script2.ts"></script>
     <script type="module" src="../functions.ts"></script>
@@ -13,7 +12,7 @@
 <body>
     <div class="top_bar">
         <div class="nav_drawer">
-            <button>≡</button>
+            <button id="menu_btn" aria-label="Open menu">≡</button>
         </div>
         <div class="title">
             <span>Billing</span>
@@ -55,7 +54,7 @@
             <button class="clear" id="clear" hidden>Clear</button>
         </div>
         <div class="legend">
-            <span class="legend_item critical">Critical</span>
+            <span class="legend_item critical">Low in stock + In Expiry Period</span>
             <span class="legend_item expiring">Expiring soon</span>
             <span class="legend_item low-stock">Low stock</span>
         </div>
@@ -147,5 +146,16 @@
             <button type="button" class="btn btn_danger" id="confirm_yes">Cancel order</button>
         </div>
     </div>
+    
+    <nav class="drawer" id="drawer" aria-hidden="true">
+        <div class="drawer_header">
+            <span>Menu</span>
+            <button class="drawer_close" id="drawer_close" aria-label="Close menu">✕</button>
+        </div>
+        <button class="drawer_item" data-label="reorder"
+                data-url="src/reorder/page.html" data-title="Reorder list">Reorder list</button>
+        <button class="drawer_item" data-label="expiry"
+                data-url="src/expiry/page.html" data-title="Expiring batches">Expiring batches</button>
+    </nav>
 </body>
 </html>

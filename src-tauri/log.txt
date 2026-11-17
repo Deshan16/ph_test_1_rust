@@ -1,0 +1,12 @@
+====[2026-11-17::03:51:27.765737023]====
+FailedToGetDataFromDatabase("error occurred while decoding column \"prod_id\": mismatched types; Rust type `u64` (as SQL type `BIGINT UNSIGNED`) is not compatible with SQL type `INT`")
+==================================================
+====[2026-11-17::03:51:39.123006781]====
+FailedToGetDataFromDatabase("error occurred while decoding column \"prod_id\": mismatched types; Rust type `u64` (as SQL type `BIGINT UNSIGNED`) is not compatible with SQL type `INT`")
+==================================================
+====[2026-11-17::03:51:53.316252623]====
+FailedToGetDataFromDatabase("error occurred while decoding column \"prod_id\": mismatched types; Rust type `u64` (as SQL type `BIGINT UNSIGNED`) is not compatible with SQL type `INT`")
+==================================================
+========================[2026-11-17::17:35:23.706788303]========================
+FailedToUpdateDatabase("No rows are updated")
+==========================================================================================

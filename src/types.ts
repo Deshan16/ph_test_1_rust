@@ -33,7 +33,7 @@ export interface InventoryBatchRow {
  *  Contain the message that need to displayed on in the tooltip.
  */
 export const LABELS: Record<string, string> = {
-    "expired": "Expired",
+    "critical": "Low in stock + In Expiry Period",
     "expiring": "In Expiry Period",
     "low-stock": "Stock below reorder level"
 }
@@ -66,5 +66,45 @@ export interface UserData {
 
 export interface BillingOrderItem {
     batch_id: number,
-    bought_quantity: string
+    bought_quantity: string,
+    name: string,
+    unit_price: string
+}
+
+export interface BillingOrder {
+    total_amount: string,
+    payment_method: string,
+    status: string,
+    items: BillingOrderItem[]
+}
+
+export interface BillingOrderInfo {
+    order_id: number,
+    order_date: string,
+    order_time: string
+}
+
+export const SHOP = { 
+    name: "SHOP NAME", 
+    address: "Address line", 
+    phone: "000 000 0000" 
+};
+
+export const DIMENSIONS = {
+    W: 80,
+    M: 4,
+    LINE: 4.2,
+    FONT: 8
+}
+
+export interface ReorderItems {
+    prod_id: number,
+    prod_type: string,
+    name: string,
+    reorder_level: string, 
+    stock: string, 
+    shortfall: string, 
+    // Medicine Specific Attributes.
+    generic_name: string | null,
+    company: string | null
 }

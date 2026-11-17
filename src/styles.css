@@ -1,11 +1,16 @@
 :root {
-  --bg: #121212;
-  --surface: #1e1e1e;
-  --border: #333;
-  --text: #e6e6e6;
-  --muted: #9a9a9a;
-  --accent: #3b82f6;      /* replace with your app's accent */
-  --danger: #ef4444;
+	--bg: #0f1115;
+    --surface: #181b22;
+    --surface-2: #1f232c;
+    --border: #2a2f3a;
+    --text: #e6e8ee;
+    --muted: #8b92a3;
+    --accent: #5b8def;
+	--danger: #ef4444;
+
+    --critical-fill: #5c141a; --critical-edge: #ff2d3d;
+    --expiring-fill: #4a3515; --expiring-edge: #d99a2b;
+    --low-stock-fill: #35294f; --low-stock-edge: #9b7de8;
 }
 
 * { box-sizing: border-box; }

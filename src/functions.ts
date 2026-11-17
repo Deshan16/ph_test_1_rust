@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
-import { InventoryProductRow, InventoryBatchRow, BillingProductRow, BillingBatchRow, UserData, BillingOrderItem } from "./types";
+import { InventoryProductRow, InventoryBatchRow, BillingProductRow, BillingBatchRow, UserData, BillingOrder, BillingOrderInfo } from "./types";
+import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 
 /**
  * 	A function wraps around the invoke for get product rows for inventory from database.
@@ -53,9 +54,9 @@ export function login_data(text: string): Promise<UserData> {
 	return invoke<UserData>("login_data", { text: text });
 }
 
-export function billingSendCart(batchList: BillingOrderItem[]) {
-	return invoke<BillingOrderItem[]>("update_database", { items: batchList })
-}
+// export function billingSendCart(batchList: BillingOrderItem[]) {
+// 	return invoke<BillingOrderItem[]>("update_database", { items: batchList })
+// }
 
 /**
  *  Helper function to change styles of rows displayed to identify their state.
@@ -69,7 +70,6 @@ export function prodRowColorPicker(productRow: InventoryProductRow | BillingProd
     return null;
 }
 
-
 /**
  *  Helper function to change styles of rows displayed to identify their state.
  *  @param batchRow BatchRow that holds the info about the batch.
@@ -78,4 +78,19 @@ export function prodRowColorPicker(productRow: InventoryProductRow | BillingProd
 export function batchRowColorPicker(batchRow: InventoryBatchRow | BillingBatchRow): string | null {
     if (batchRow.in_expiry_period) return "expiring";
     return null;
+}
+
+export function billingUpdateDatabase(order: BillingOrder) {
+	return invoke<BillingOrderInfo>("update_database", { order: order });
+}
+
+export async function openWindow(label: string, url: string, title: string) {
+	const existing = await WebviewWindow.getByLabel(label)
+	if (existing) {
+		await existing.setFocus();
+		return;
+	}
+	
+	const win = new WebviewWindow(label, { url, title, width: 1000, height: 650, center: true });
+	win.once("tauri://error", (e) => console.error(`Failed to open ${label}`, e));
 }

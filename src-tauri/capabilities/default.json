@@ -2,9 +2,15 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "Capability for the main window",
-  "windows": ["main"],
+  "windows":  ["main", "reorder"],
   "permissions": [
     "core:default",
-    "opener:default"
+    "opener:default",
+    "fs:default",
+    "fs:default",
+    { "identifier": "fs:allow-mkdir", "allow": [{ "path": "$DOCUMENT" }, { "path": "$DOCUMENT/**" }] },
+    { "identifier": "fs:allow-write-file", "allow": [{ "path": "$DOCUMENT" }, { "path": "$DOCUMENT/**" }] },
+    "core:webview:allow-create-webview-window",
+    "core:window:allow-set-focus"
   ]
 }
