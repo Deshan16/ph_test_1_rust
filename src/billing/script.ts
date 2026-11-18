@@ -1,132 +1,132 @@
+import { BillingBatchRow, BillingOrder, BillingOrderItem, BillingProductRow, LABELS } from "../types";
+import { batchRowColorPicker, billingGetBatches, billingGetProducts, billingUpdateDatabase, mustGet, openWindow, prodRowColorPicker } from "../functions";
 import Decimal from "decimal.js";
-import { billingGetBatches, billingGetProducts, mustGet } from "../functions";
-import { BillingBatchRow, BillingOrderItem, BillingProductRow } from "../types";
+import { makeReceipts, saveReceipt } from "./receipts";
 
-const add_row_btn = mustGet<HTMLTableRowElement>(".add_row");
-const search_window = mustGet<HTMLDivElement>(".search_window");
+
+
+const searchWindow = mustGet<HTMLDivElement>(".search_window");
 const overlay = mustGet<HTMLDivElement>(".overlay");
-const product_search_bar = mustGet<HTMLDivElement>("#search_text");
-const product_table_box = mustGet<HTMLDivElement>(".search_table_box");
-const product_tbody = mustGet<HTMLTableSectionElement>(".search_table tbody");
-const clear_button = mustGet<HTMLButtonElement>("#clear");
-const search_text = mustGet<HTMLInputElement>("#search_text");
-const batch_table_box = mustGet<HTMLDivElement>(".search_batch_results");
-const batch_tbody = mustGet<HTMLTableSectionElement>("#batch_table tbody");
-const billing_tbody = mustGet<HTMLTableSectionElement>("#billing_table tbody");
-const checkout = mustGet<HTMLButtonElement>("#checkout");
-const cancel = mustGet<HTMLButtonElement>("#cancel_order");
-const checkout_window = mustGet<HTMLDivElement>(".checkout_window");
+const productSearchBar = mustGet<HTMLDivElement>("#search_text");
+const productTableBox = mustGet<HTMLDivElement>(".search_table_box");
+const prodTable = mustGet<HTMLTableSectionElement>(".search_table tbody");
+const clearButton = mustGet<HTMLButtonElement>("#clear");
+const searchText = mustGet<HTMLInputElement>("#search_text");
+const batchTableBox = mustGet<HTMLDivElement>(".search_batch_results");
+const batchTable = mustGet<HTMLTableSectionElement>("#batch_table tbody");
+const billingTable = mustGet<HTMLTableSectionElement>("#billing_table tbody");
+const checkoutButton = mustGet<HTMLButtonElement>("#checkout");
+const cancelButton = mustGet<HTMLButtonElement>("#cancel_order");
+const itemRowOptionMenu = mustGet<HTMLDivElement>("#row_menu");
+const cancelPopUpBox = mustGet<HTMLDivElement>("#cancel_confirm");
+const checkoutWindow = mustGet<HTMLDivElement>(".checkout_window");
+const checkoutWindowAmountInput = mustGet<HTMLInputElement>("#amount_paid");
+const grandTotalField = mustGet<HTMLSpanElement>("#grand_total");
+const checkoutWindowNextCustomerButton = mustGet<HTMLButtonElement>("#next_customer");
+const checkoutWindowItemCount = mustGet<HTMLSpanElement>("#checkout_items");
+const checkoutWindowTotal = mustGet<HTMLSpanElement>("#checkout_total");
+const checkoutWindowPaymentMethod = mustGet<HTMLSelectElement>("#payment_method");
+const checkoutWindowChangeLabel = mustGet<HTMLSpanElement>("#change_amount");
+const drawer = mustGet<HTMLElement>("#drawer");
 
+
+/**
+ *  Current active( just clicked ) row in the billing table.
+ */
+let activeBillingRow: HTMLTableRowElement | null = null;
+
+/**
+ *  Cart Object.
+ */
 const cart = {
     items: [] as BillingOrderItem[],
-    on_change: () => {},
-    add(item: BillingOrderItem) { this.items.push(item); this.on_change() },
-    clear() { this.items = []; this.on_change() }
+    /**
+     *  Trigger when the cart is changed.
+     */
+    onChange: () => {},
+    
+    /**
+     *  Insert Products to the cart.
+     * @param item Item that need to insert in to the cart
+     */
+    add(item: BillingOrderItem): void {
+        this.items.push(item);
+        this.onChange();
+    },
+    
+    /**
+     *  Clear the cart.
+     */
+    clear(): void {
+        this.items = [];
+        this.onChange();
+    },
+    
+    /**
+     *  Remove an item from the cart.
+     * @param batch_id id of the item that need to remove.
+     */
+    remove(batch_id: number): void {
+        this.items = this.items.filter((item) => item.batch_id !== batch_id)
+        this.onChange();
+    },
+    
+    /**
+     *  Update quantity of an item.
+     * @param batch_id id of the item that need to change the quantity.
+     * @param quantity new quantity.
+     */
+    updateQuantity(batch_id: number, quantity: string): void {
+        const item = this.items.find((item) => item.batch_id === batch_id);
+        if (!item) return;
+        item.bought_quantity = quantity;
+        this.onChange();
+    }
 }
 
-cart.on_change = () => {
-    checkout.disabled = cart.items.length === 0;
-    cancel.disabled = cart.items.length === 0;
+cart.onChange = (): void => {
+    checkoutButton.disabled = cart.items.length === 0;
+    cancelButton.disabled = cart.items.length === 0;
 }
 
-function clear_search_window(): void {
-    search_text.value = '';
-    product_table_box.hidden = true;
-    clear_button.hidden = true;
-    batch_table_box.hidden = true;
-}
+mustGet<HTMLTableRowElement>(".add_row").addEventListener("click", () => {
+    searchWindow.hidden = false;
+    overlay.classList.add("active");
+    productSearchBar.focus();
+});
 
-function close_search_window(): void {
-    search_window.hidden = true;
-    clear_search_window();
-    overlay.classList.remove("active");
-}
+searchWindow.addEventListener("keydown", (event: KeyboardEvent) => {
+    if (event.key === "Escape") closeSearchWindow();
+});
 
-function create_quantity_input(): HTMLInputElement {
-    const element = document.createElement("input");
-    element.type = "text";
-    element.value = '1';
-    return element
-}
+productSearchBar.addEventListener("input", () => {
+    productTableBox.hidden = searchText.value === '';
+    clearButton.hidden = searchText.value === '';
+    loadSearchData(searchText.value);
+});
 
 /**
- *  Helper function to change styles of rows displayed to identify their state.
- *  @param product_row ProductRow that holds the info about the current row
- *  @returns class name. if nothing is wrong null
+ *  Load the products, batches to the UI to add to the bill.
+ * @param text text that use to search and narrow down the product.
  */
-function product_row_class_picker(product_row: BillingProductRow): string | null {
-    if (product_row.in_expiry_period && product_row.low_stock) return "critical";
-    if (product_row.in_expiry_period) return "expiring";
-    if (product_row.low_stock) return "low-stock";
-    return null;
-}
-
-/**
- *  Helper function to change styles of rows displayed to identify their state.
- *  @param batch_row BatchRow that holds the info about the batch.
- *  @returns class name. if nothing is wrong null
- */
-function batch_row_class_picker(batch_row: BillingBatchRow): string | null {
-    if (batch_row.in_expiry_period) return "expiring";
-    return null;
-}
-
-async function load_data(text: string) {
+async function loadSearchData(text: string): Promise<void> {
     try {
-        const product_rows = await billingGetProducts(text);
-        product_tbody.innerHTML = '';
-        product_rows.forEach((product_row) => {
-            const product_trow = product_tbody.insertRow();
-            
-            product_trow.insertCell().innerText = String(product_row.prod_id);
-            product_trow.insertCell().innerText = product_row.prod_type === "gro" ? "Grocery" : "Medicine";
-            product_trow.insertCell().innerText = product_row.name;
-            product_trow.insertCell().innerText = product_row.generic_name ? product_row.generic_name : '-';
-            product_trow.insertCell().innerText = product_row.company ? product_row.company : '-';
-            product_trow.insertCell().innerText = product_row.form ? product_row.form : '-';
-            product_trow.insertCell().innerText = product_row.strength ? product_row.strength : '-';
-            
-            const cls = product_row_class_picker(product_row);
-            if (cls) product_trow.classList.add(cls);
-            
-            product_trow.addEventListener("click", async () => {
-                batch_table_box.hidden = false;
-                batch_tbody.innerHTML = '';
-                const batch_rows = await billingGetBatches(product_row.prod_id);
-                batch_rows.forEach((batch_row) => {
-                    const batch_trow = batch_tbody.insertRow();
-                    batch_trow.insertCell().innerText = String(batch_row.batch_id);
-                    batch_trow.insertCell().innerText = batch_row.batch_number;
-                    batch_trow.insertCell().innerText = batch_row.unit_sell_price;
-                    batch_trow.insertCell().innerText = batch_row.expiry_date;
-                    batch_trow.insertCell().innerText = batch_row.current_stock;
-                    const cls = batch_row_class_picker(batch_row);
-                    if (cls) batch_trow.classList.add(cls);
-                    batch_trow.addEventListener("click", () => {
-                        close_search_window();
-                        const billing_trow = billing_tbody.insertRow();
-                        
-                        billing_trow.insertCell().innerText = String(product_row.prod_id);
-                        billing_trow.insertCell().innerText = product_row.prod_type === "gro" ? "Grocery" : "Medicine";
-                        const name = billing_trow.insertCell();
-                        name.innerText = product_row.name;;
-                        name.title = `${product_row.name} ${product_row.generic_name} ${product_row.company} ${product_row.strength}`;
-                        billing_trow.insertCell().innerText = batch_row.unit_sell_price;
-                        const inp = create_quantity_input();
-                        billing_trow.insertCell().appendChild(inp);
-                        const total_ = billing_trow.insertCell()
-                        inp.focus();
-                        let prod_row: BillingOrderItem = {
-                            batch_id: batch_row.batch_id,
-                            bought_quantity: inp.value
-                        }
-                        inp.addEventListener("blur", () => {
-                            const x = inp.value;
-                            total_.innerText = String(Decimal(x).times(Decimal(batch_row.unit_sell_price)));
-                            prod_row.bought_quantity = x;
-                        });
-                        
-                        cart.add(prod_row);
+        const searchProdRows = await billingGetProducts(text);
+        prodTable.innerHTML = "";
+        searchProdRows.forEach((prodRow) => {
+            const prodTableRow = prodTable.insertRow();
+            prodRowBuilder(prodTableRow, prodRow);
+            prodTableRow.addEventListener("click", async () => {
+                batchTableBox.hidden = false;
+                batchTable.innerHTML = "";
+                const searchBatchRows = await billingGetBatches(prodRow.prod_id);
+                searchBatchRows.forEach((batchRow) => {
+                    const batchTableRow = batchTable.insertRow();
+                    batchRowBuilder(batchTableRow, batchRow);
+                    batchTableRow.addEventListener("click", () => {
+                        closeSearchWindow();
+                        const billTableRow = billingTable.insertRow();
+                        billingRowBuilder(billTableRow, prodRow, batchRow);
                     });
                 });
             });
@@ -136,51 +136,316 @@ async function load_data(text: string) {
     }
 }
 
-add_row_btn.addEventListener("click", () => {
-    search_window.hidden = false;
-    overlay.classList.add("active");
-    product_search_bar.focus();
-});
-
-product_search_bar.addEventListener("input", () => {
-    product_table_box.hidden = search_text.value === '';
-    clear_button.hidden = search_text.value === '';
-    load_data(search_text.value);
-});
-
-overlay.addEventListener("click", () => {
-    close_search_window();
-});
-
-clear_button.addEventListener("click", clear_search_window);
-
-cancel.addEventListener("click", () => {
-    billing_tbody.innerHTML = '';
-    cart.clear();
-    cancel.disabled = true;
-    checkout.disabled = true;
-});
-
-checkout.addEventListener("click", async () => {
-    try {
-        billing_tbody.innerHTML = '';
-        checkout_window.hidden = false;
-        // await billingSendCart(cart.items);
-    } catch (err) {
-        alert(err)
+/**
+ *  Build the search box's product table's rows.
+ * @param prodTableRow table row that insert cells.
+ * @param prodRow obj that holds data.
+ */
+function prodRowBuilder(prodTableRow: HTMLTableRowElement, prodRow: BillingProductRow): void {
+    prodTableRow.insertCell().innerText = String(prodRow.prod_id);
+    prodTableRow.insertCell().innerText = prodRow.prod_type === "gro" ? "Grocery" : "Medicine";
+    prodTableRow.insertCell().innerText = prodRow.name;
+    prodTableRow.insertCell().innerText = prodRow.generic_name ? prodRow.generic_name : '-';
+    prodTableRow.insertCell().innerText = prodRow.company ? prodRow.company : '-';
+    prodTableRow.insertCell().innerText = prodRow.form ? prodRow.form : '-';
+    prodTableRow.insertCell().innerText = prodRow.strength ? prodRow.strength : '-';
+    
+    const cls = prodRowColorPicker(prodRow);
+    if (cls) {
+        prodTableRow.classList.add(cls);
+        prodTableRow.title = LABELS[cls];
     }
-});
-
-function updateTotal(): void {
-    let total = Decimal('0');
-    document.querySelectorAll<HTMLTableRowElement>("#billing_table tbody tr").forEach(row => {
-        total = total.add(Decimal(String(row.cells[5].textContent)));
-    });
-    document.getElementById("grand_total")!.textContent = String(total);
 }
 
-new MutationObserver(updateTotal).observe(billing_tbody, {
+/**
+ *  Build the search box's batch tables's rows.
+ * @param batchTableRow table row that insert cells.
+ * @param batchRow object that hold the data needed.
+ */
+function batchRowBuilder(batchTableRow: HTMLTableRowElement, batchRow: BillingBatchRow): void {
+    batchTableRow.insertCell().innerText = String(batchRow.batch_id);
+    batchTableRow.insertCell().innerText = batchRow.batch_number;
+    batchTableRow.insertCell().innerText = batchRow.unit_sell_price;
+    batchTableRow.insertCell().innerText = batchRow.expiry_date;
+    batchTableRow.insertCell().innerText = batchRow.current_stock;
+    
+    const cls = batchRowColorPicker(batchRow);
+    if (cls) {
+        batchTableRow.classList.add(cls);
+        batchTable.title = LABELS[cls];
+    }
+}
+
+function billingRowBuilder(billTableRow: HTMLTableRowElement, prodRow: BillingProductRow, batchRow: BillingBatchRow): void {
+    billTableRow.insertCell().innerText = String(prodRow.prod_id);
+    billTableRow.insertCell().innerText = prodRow.prod_type === "gro" ? "Grocery" : "Medicine";
+    
+    const nameCell = billTableRow.insertCell();
+    nameCell.innerText = prodRow.name;
+    nameCell.title = `${prodRow.name} ${prodRow.generic_name} ${prodRow.company} ${prodRow.strength}`;
+    
+    billTableRow.insertCell().innerText = batchRow.unit_sell_price;
+    
+    const input = quantityInputBuilder();
+    billTableRow.insertCell().appendChild(input);
+    input.focus();
+    input.select();
+    
+    const totalCell = billTableRow.insertCell();
+    
+    cart.add({ batch_id: batchRow.batch_id, 
+        bought_quantity: input.value, 
+        name: `${prodRow.name} ${prodRow.generic_name} ${prodRow.company}`,
+        unit_price: batchRow.unit_sell_price
+    });
+    
+    input.addEventListener("blur", () => {
+        const parsedValue = parseFloat(input.value);
+        if (isNaN(parsedValue) || parsedValue <= 0.0 || input.value.trim() === '') input.value = '1';
+        
+        const quantity = input.value;
+        totalCell.innerText = String(Decimal(quantity).times(Decimal(batchRow.unit_sell_price)).toFixed(2));
+        input.disabled = true;
+        cart.updateQuantity(batchRow.batch_id, input.value);
+    });
+    
+    billTableRow.insertCell().appendChild(billingOptionButton());
+    billTableRow.setAttribute("data-id", String(batchRow.batch_id));
+}
+
+/**
+ *  Build the textfield that enter the quantity of each product.
+ * @returns HTMLInputElement
+ */
+function quantityInputBuilder() {
+    const input = document.createElement("input");
+    input.type = "text";
+    input.value = '1';
+    input.addEventListener("input", () => inputFilter(input));
+    
+    input.addEventListener("keydown", (event: KeyboardEvent) => {
+        if (event.key === "Enter") input.blur();
+    });
+    
+    return input;
+}
+
+function billingOptionButton(): HTMLButtonElement {
+    const button = document.createElement("button");
+    button.classList.add("row_menu_btn");
+    button.type = "button";
+    button.innerHTML = "&#8943;";
+    button.setAttribute("aria-label", "Item options");
+    
+    button.addEventListener("click", (event: PointerEvent) => {
+        event.stopPropagation();
+        activeBillingRow = button.closest("tr");
+        
+        const rect = button.getBoundingClientRect();
+        
+        itemRowOptionMenu.hidden = false;
+        itemRowOptionMenu.style.top = `${rect.bottom + 4}px`;
+        itemRowOptionMenu.style.left = `${rect.right - itemRowOptionMenu.offsetWidth}px`
+    });
+    return button;
+}
+
+itemRowOptionMenu.addEventListener("click", (event: PointerEvent) => {
+    const item = (event.target as HTMLElement).closest<HTMLButtonElement>(".row_menu_item");
+    if (!activeBillingRow || !item) return;
+    
+    switch (item.getAttribute("data-action")) {
+        case "remove":
+            const batch_id = activeBillingRow.getAttribute("data-id");
+            if (batch_id) {
+                cart.remove(parseInt(batch_id));
+                activeBillingRow.remove();
+                activeBillingRow = null;
+            }
+            break;
+        
+        case "edit":
+            const input = activeBillingRow.cells[4].querySelector<HTMLInputElement>("input")
+            if (input) {
+                input.disabled = false;
+                input.focus();
+                input.select();
+            }
+            break;
+    }
+    
+    itemRowOptionMenu.hidden = true;
+})
+
+clearButton.addEventListener("click", clearSearchWindow);
+
+/**
+ * Clear search results from the search box.
+ */
+function clearSearchWindow(): void {
+    searchText.value = '';
+    productTableBox.hidden = true;
+    clearButton.hidden = true;
+    batchTableBox.hidden = true;
+}
+
+/**
+ * Close the search box.
+ */
+function closeSearchWindow(): void {
+    searchWindow.hidden = true;
+    clearSearchWindow();
+    overlay.classList.remove("active");
+}
+
+overlay.addEventListener("click", () => {
+    if (!searchWindow.hidden) closeSearchWindow();
+    if (!cancelPopUpBox.hidden) closeCancelOrderPopUp();
+    toggleDrawer(false);
+});
+
+new MutationObserver(calculateTotal).observe(billingTable, {
     childList: true,
     subtree: true,
     characterData: true,
+});
+
+/**
+ * Calculate the total of the bill.
+ */
+function calculateTotal(): void {
+    let total = Decimal('0');
+    document.querySelectorAll<HTMLTableRowElement>("#billing_table tbody tr").forEach((row) => {
+        total = total.add(Decimal(String(row.cells[5].textContent)));
+    });
+    grandTotalField.textContent = total.toFixed(2);
+}
+
+document.addEventListener("click", () => {
+    itemRowOptionMenu.hidden = true;
+});
+
+mustGet<HTMLButtonElement>("#cancel_order").addEventListener("click", () => {
+    cancelPopUpBox.hidden = false;
+    overlay.classList.add("active");
+});
+
+mustGet<HTMLButtonElement>("#confirm_yes").addEventListener("click", () => {
+    cart.clear();
+    billingTable.innerHTML = '';
+    closeCancelOrderPopUp();
+});
+
+mustGet<HTMLButtonElement>("#confirm_no").addEventListener("click", closeCancelOrderPopUp);
+
+function closeCancelOrderPopUp(): void {
+    cancelPopUpBox.hidden = true;
+    overlay.classList.remove("active");
+}
+
+checkoutButton.addEventListener("click", () => {
+    checkoutWindow.hidden = false;
+    overlay.classList.add("active");
+    checkoutWindowItemCount.innerText = String(cart.items.length);
+    checkoutWindowTotal.innerText = grandTotalField.textContent;
+});
+
+mustGet<HTMLButtonElement>("#cancel_checkout").addEventListener("click", () => {
+    billingTable.innerHTML = '';
+    cart.clear();
+    closeCheckoutWindow();
+});
+
+mustGet<HTMLButtonElement>("#checkout_close").addEventListener("click", closeCheckoutWindow);
+
+function closeCheckoutWindow(): void {
+    checkoutWindowAmountInput.value = '';
+    checkoutWindowChangeLabel.innerHTML = '0.00';
+    checkoutWindow.hidden = true;
+    checkoutWindowPaymentMethod.value = "card";
+    checkoutWindowAmountInput.disabled = false;
+    overlay.classList.remove("active");
+}
+
+mustGet<HTMLButtonElement>("#next_customer").addEventListener("click", async () => {
+    try {
+        const total = grandTotalField.textContent;
+        const method = checkoutWindowPaymentMethod.value
+        const status = "completed";
+        const paid = checkoutWindowAmountInput.value;
+        const change = checkoutWindowChangeLabel.textContent;
+        
+        const order: BillingOrder = {
+            total_amount: total,
+            payment_method: method,
+            status: status,
+            items: cart.items
+        }
+        
+        const orderInfo = await billingUpdateDatabase(order);
+        
+        const bytes = makeReceipts(orderInfo, order, paid, change);
+        await saveReceipt(bytes, orderInfo.order_id);
+        
+        closeCheckoutWindow();
+        cart.clear();
+        billingTable.innerHTML = '';
+    } catch (err) {
+        alert(err);
+    }
+});
+
+checkoutWindowAmountInput.addEventListener("input", () => inputFilter(checkoutWindowAmountInput));
+
+checkoutWindowAmountInput.addEventListener("keydown", (event: KeyboardEvent) => {
+    if (event.key === "Enter") {
+        const paid = Decimal(checkoutWindowAmountInput.value);
+        const total = Decimal(grandTotalField.textContent);
+        const change = paid.minus(total);
+        if (change.isNeg()) {
+            checkoutWindowChangeLabel.innerText = "Error";
+            checkoutWindowAmountInput.select();
+            checkoutWindowNextCustomerButton.disabled = true;
+            return
+        }
+        checkoutWindowChangeLabel.innerText = change.toFixed(2);
+        checkoutWindowAmountInput.blur();
+        checkoutWindowNextCustomerButton.disabled = false;
+    }
+});
+
+checkoutWindowPaymentMethod.addEventListener("change", () => {
+    const isCard = checkoutWindowPaymentMethod.value === "card";
+    checkoutWindowAmountInput.disabled = isCard;
+    if (isCard) {
+        checkoutWindowAmountInput.value = '';
+        checkoutWindowChangeLabel.innerText = "0.00";
+    }
+});
+
+function inputFilter(input: HTMLInputElement): void {
+    let cleaned = input.value.replace(/[^0-9.]/g, '');
+    const parts = cleaned.split('.');
+    if (parts.length > 2) cleaned = parts[0] + '.' + parts.slice(1).join('');
+    input.value = cleaned;
+}
+
+mustGet<HTMLButtonElement>("#menu_btn").addEventListener("click", () => toggleDrawer(true));
+mustGet<HTMLButtonElement>("#drawer_close").addEventListener("click", () => toggleDrawer(false));
+
+function toggleDrawer(open: boolean) {
+    drawer.classList.toggle("open", open);
+    overlay.classList.toggle("active", open);
+    drawer.setAttribute("aria-hidden", String(!open));
+}
+
+document.addEventListener("keydown", (event: KeyboardEvent) => {
+    if (event.key === "Escape") toggleDrawer(false);
+});
+
+drawer.querySelectorAll<HTMLButtonElement>(".drawer_item").forEach((btn) => {
+    btn.addEventListener("click", () => {
+        void openWindow(btn.getAttribute("data-label")!, btn.getAttribute("data-url")!, btn.getAttribute("data-title")!);
+        toggleDrawer(false);
+    });
 });

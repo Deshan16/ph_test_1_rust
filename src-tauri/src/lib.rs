@@ -14,12 +14,12 @@ pub fn run() {
             let pool = tauri::async_runtime::block_on(
                 MySqlPoolOptions::new().max_connections(5).connect(&url),
             )?;
-
+            
             match tauri::async_runtime::block_on(database::deactivate_batches(&pool)) {
                 Ok(n) => println!("Deactivated {n} batches"),
                 Err(e) => eprintln!("Deactivate Failed {:?}", e),
             }
-
+            
             app.manage(pool);
             Ok(())
         })
@@ -31,7 +31,8 @@ pub fn run() {
             database::billing_get_batches,
             database::login_data,
             database::update_database,
-            database::generate_reorder_list
+            database::generate_reorder_list,
+            database::generate_expired_list
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="../styles.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script type="module" src="script.ts"></script>
+    <title>expired leftovers</title>
+</head> 
+<body>
+    <div class="top_bar">
+        <div class="title"><span>Expired batch list</span></div>
+        <button id="refresh" aria-label="Refresh">↻</button>
+    </div>
+    <div class="list_box">
+        <table id="reorder_table">
+            <thead>
+                <tr>
+                    <th>Product ID</th>
+                    <th>Type</th>
+                    <th>Name</th>
+                    <th>Generic name</th>
+                    <th>Company</th>
+                    <th>Batch ID</th>
+                    <th>Batch Number</th>
+                    <th>Expired Date</th>
+                    <th>Current Stock</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+        <p class="empty" id="empty" hidden>Nothing to reorder right now.</p>
+    </div>
+</body>
+</html>

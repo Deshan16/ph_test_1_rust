@@ -4,10 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Billing</title>
+    <link rel="stylesheet" href="../styles.css">
     <link rel="stylesheet" href="style.css">
-    <script type="module" src="script2.ts"></script>
-    <script type="module" src="../functions.ts"></script>
-    <script type="module" src="../types.ts"></script>
+    <script type="module" src="script.ts"></script>
 </head>
 <body>
     <div class="top_bar">
@@ -154,8 +153,10 @@
         </div>
         <button class="drawer_item" data-label="reorder"
                 data-url="src/reorder/page.html" data-title="Reorder list">Reorder list</button>
-        <button class="drawer_item" data-label="expiry"
-                data-url="src/expiry/page.html" data-title="Expiring batches">Expiring batches</button>
+        <button class="drawer_item" data-label="expired"
+                data-url="src/expired/page.html" data-title="Expired batches">Expired batches</button>
+        <button class="drawer_item" data-label="inventory"
+                data-url="src/inventory/page.html" data-title="Inventory overview">Inventory overview</button>
     </nav>
 </body>
 </html>

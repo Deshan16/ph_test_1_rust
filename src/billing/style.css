@@ -1,52 +1,8 @@
-/* ---------- reset & tokens ---------- */
-* { padding: 0; margin: 0; box-sizing: border-box; }
-[hidden] { display: none !important; }
+/* =====================================================================
+   billing/style.css: billing page only. Link after ../main.css.
+   ===================================================================== */
 
-:root {
-    --bg: #0f1115;
-    --surface: #181b22;
-    --surface-2: #1f232c;
-    --border: #2a2f3a;
-    --text: #e6e8ee;
-    --muted: #8b92a3;
-    --accent: #5b8def;
-
-    --critical-fill: #5c141a; --critical-edge: #ff2d3d;
-    --expiring-fill: #4a3515; --expiring-edge: #d99a2b;
-    --low-stock-fill: #35294f; --low-stock-edge: #9b7de8;
-}
-
-/* ---------- layout ---------- */
-body {
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    background: var(--bg);
-    color: var(--text);
-    font: 14px "Inter", system-ui, sans-serif;
-}
-
-.top_bar {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 20px;
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-}
-.top_bar .title { flex: 1; font-size: 18px; font-weight: 600; }
-.top_bar button {
-    background: none;
-    border: none;
-    color: var(--text);
-    font-size: 22px;
-    cursor: pointer;
-    padding: 2px 8px;
-    border-radius: 6px;
-}
-.top_bar button:hover { background: var(--surface-2); }
-
-/* ---------- tables (shared) ---------- */
+/* ---------- tables (billing overrides) ---------- */
 .billing_table,
 .search_table_box,
 .search_batch_results {
@@ -58,26 +14,12 @@ body {
 .search_table_box,
 .search_batch_results { max-height: 30vh; }
 
-table { width: max-content; min-width: 100%; border-collapse: collapse; }
+table { width: max-content; min-width: 100%; }
 th, td {
-    padding: 10px 14px;
-    text-align: left;
-    white-space: nowrap;
     max-width: 280px;
     overflow: hidden;
     text-overflow: ellipsis;
 }
-th {
-    position: sticky;
-    top: 0;
-    background: var(--surface-2);
-    color: var(--muted);
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    border-bottom: 1px solid var(--border);
-}
-td { border-bottom: 1px solid var(--border); }
 
 /* clickable rows only in the search window */
 .search_table_box tbody tr,
@@ -88,15 +30,6 @@ td { border-bottom: 1px solid var(--border); }
     background: var(--surface-2);
 }
 
-/* ---------- row states (one definition, works in any table) ---------- */
-tr.critical  { --fill: var(--critical-fill);  --edge: var(--critical-edge); }
-tr.expiring  { --fill: var(--expiring-fill);  --edge: var(--expiring-edge); }
-tr.low-stock { --fill: var(--low-stock-fill); --edge: var(--low-stock-edge); }
-
-tr:is(.critical, .expiring, .low-stock) td { background: var(--fill); }
-tr:is(.critical, .expiring, .low-stock) td:first-child { box-shadow: inset 3px 0 0 var(--edge); }
-tr:is(.critical, .expiring, .low-stock):hover td { filter: brightness(1.25); }
-
 /* ---------- billing table ---------- */
 .billing_table {
     flex: 1;
@@ -104,6 +37,8 @@ tr:is(.critical, .expiring, .low-stock):hover td { filter: brightness(1.25); }
     border-radius: 10px;
     background: var(--surface);
 }
+#billing_table tbody td { cursor: default; }
+
 .billing_table input[type="text"] {
     width: 72px;
     padding: 4px 8px;
@@ -137,81 +72,26 @@ tr:is(.critical, .expiring, .low-stock):hover td { filter: brightness(1.25); }
 }
 .billing_table tfoot tr.add_row:hover td { color: var(--accent); background: var(--surface); }
 
-/* ---------- overlay + search window ---------- */
+/* ---------- overlay (billing fades it with .active) ---------- */
 .overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.6);
-    z-index: 100;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.15s;
 }
 .overlay.active { opacity: 1; pointer-events: auto; }
 
+/* ---------- search window ---------- */
 .search_window {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 101;
     width: min(900px, 92vw);
     max-height: 85vh;
     display: flex;
     flex-direction: column;
     gap: 12px;
     padding: 16px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
 }
+.search input { background: var(--bg); }
 
-.legend {
-	display: flex;
-	gap: 16px;
-	padding: 0 20px 8px;
-	color: var(--muted);
-	font-size: 12px;
-    cursor: default;
-}
-
-.legend_item::before {
-	content: "";
-	display: inline-block;
-	width: 10px;
-	height: 10px;
-	margin-right: 6px;
-	border-radius: 50%;
-}
-
-.legend_item.critical::before { background: var(--critical-edge); }
-.legend_item.expiring::before  { background: var(--expiring-edge); }
-.legend_item.low-stock::before { background: var(--low-stock-edge); }
-
-.search { display: flex; gap: 8px; }
-.search input {
-    flex: 1;
-    padding: 10px 14px;
-    background: var(--bg);
-    color: var(--text);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    outline: none;
-}
-.search input:focus { border-color: var(--accent); }
-
-.search .clear {
-    padding: 0 16px;
-    background: var(--surface);
-    color: var(--muted);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    cursor: pointer;
-    transition: color 0.15s, border-color 0.15s, background 0.15s;
-}
-.search .clear:hover { color: var(--text); background: var(--surface-2); border-color: var(--accent); }
-
+/* ---------- total bar ---------- */
 .total_bar {
     display: flex;
     justify-content: flex-end;
@@ -233,6 +113,7 @@ tr:is(.critical, .expiring, .low-stock):hover td { filter: brightness(1.25); }
     font-variant-numeric: tabular-nums;  /* digits don't jiggle as the value changes */
 }
 
+/* ---------- buttons ---------- */
 .btn {
     padding: 10px 20px;
     border-radius: 8px;
@@ -252,114 +133,9 @@ tr:is(.critical, .expiring, .low-stock):hover td { filter: brightness(1.25); }
 .btn_danger { margin-right: auto; color: var(--critical-edge); border-color: var(--critical-edge); background: none; }
 .btn_danger:not(:disabled):hover { background: var(--critical-fill); }
 
-.checkout_window {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 101;               /* same layer as .search_window, above .overlay (100) */
-  width: min(360px, 92vw);
-  display: flex;
-  flex-direction: column;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-}
-
-.checkout_header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 14px 18px;
-  font-size: 18px;
-  font-weight: 600;
-  border-bottom: 1px solid var(--border);
-}
-
-.checkout_body {
-  padding: 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.summary_row {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
-}
-
-.summary_total {
-  color: var(--text);
-  font-size: 24px;
-  font-weight: 600;
-}
-
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  color: var(--muted);
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.field select,
-.field input {
-  padding: 10px 14px;
-  background: var(--bg);
-  color: var(--text);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  outline: none;
-  font: inherit;
-  text-transform: none;
-  letter-spacing: normal;
-  color-scheme: dark;         /* dark dropdown list and number spinners */
-}
-.field input {
-    text-align: right;
-}
-.field select:focus,
-.field input:focus { border-color: var(--accent); }
-.field input:disabled { opacity: 0.4; cursor: not-allowed; }
-
-.change_row {
-  padding-top: 14px;
-  border-top: 1px dashed var(--border);
-  color: var(--text);
-  font-size: 20px;
-  font-weight: 600;
-}
-.change_row span:last-child { color: var(--accent); }
-
-.checkout_close {
-  background: none;
-  border: none;
-  color: var(--muted);
-  font-size: 18px;
-  line-height: 1;
-  padding: 4px 8px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: color 0.15s, background 0.15s;
-}
-
-.checkout_close:hover { color: var(--text); background: var(--surface-2); }
-
-.checkout_footer {
-  display: flex;
-  gap: 10px;
-  padding: 14px 18px;
-  border-top: 1px solid var(--border);
-}
-.checkout_footer .btn { width: 100%; }
-
-/* ---------- row options button ---------- */
+/* small icon buttons: checkout ✕, drawer ✕, row ⋮ */
+.checkout_close,
+.drawer_close,
 .row_menu_btn {
     background: none;
     border: none;
@@ -371,8 +147,91 @@ tr:is(.critical, .expiring, .low-stock):hover td { filter: brightness(1.25); }
     cursor: pointer;
     transition: color 0.15s, background 0.15s;
 }
+.checkout_close:hover,
+.drawer_close:hover,
 .row_menu_btn:hover { color: var(--text); background: var(--surface-2); }
 .row_menu_btn:focus-visible { outline: 1px solid var(--accent); }
+
+/* ---------- checkout window ---------- */
+.checkout_window {
+    width: min(360px, 92vw);
+    display: flex;
+    flex-direction: column;
+}
+
+.checkout_header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 18px;
+    font-size: 18px;
+    font-weight: 600;
+    border-bottom: 1px solid var(--border);
+}
+
+.checkout_body {
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.summary_row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+}
+.summary_total {
+    color: var(--text);
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    color: var(--muted);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.field select,
+.field input {
+    padding: 10px 14px;
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    outline: none;
+    font: inherit;
+    text-transform: none;
+    letter-spacing: normal;
+    color-scheme: dark;         /* dark dropdown list and number spinners */
+}
+.field input { text-align: right; }
+.field select:focus,
+.field input:focus { border-color: var(--accent); }
+.field input:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.change_row {
+    padding-top: 14px;
+    border-top: 1px dashed var(--border);
+    color: var(--text);
+    font-size: 20px;
+    font-weight: 600;
+}
+.change_row span:last-child { color: var(--accent); }
+
+.checkout_footer {
+    display: flex;
+    gap: 10px;
+    padding: 14px 18px;
+    border-top: 1px solid var(--border);
+}
+.checkout_footer .btn { width: 100%; }
 
 /* ---------- row options menu ---------- */
 .row_menu {
@@ -387,7 +246,6 @@ tr:is(.critical, .expiring, .low-stock):hover td { filter: brightness(1.25); }
     border-radius: 8px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
 }
-
 .row_menu_item {
     padding: 8px 12px;
     background: none;
@@ -407,20 +265,10 @@ tr:is(.critical, .expiring, .low-stock):hover td { filter: brightness(1.25); }
 
 /* ---------- confirm box ---------- */
 .confirm_box {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 101;               /* same layer as the other windows */
     width: min(320px, 92vw);
     display: flex;
     flex-direction: column;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
 }
-
 .confirm_body {
     padding: 18px;
     display: flex;
@@ -438,10 +286,7 @@ tr:is(.critical, .expiring, .low-stock):hover td { filter: brightness(1.25); }
 }
 .confirm_footer .btn { flex: 1; margin-right: 0; }  /* cancels .btn_danger's margin-right: auto */
 
-#billing_table tbody td {
-    cursor: default;
-}
-
+/* ---------- nav drawer ---------- */
 .drawer {
     position: fixed;
     top: 0;
@@ -469,19 +314,6 @@ tr:is(.critical, .expiring, .low-stock):hover td { filter: brightness(1.25); }
     font-weight: 600;
     border-bottom: 1px solid var(--border);
 }
-
-.drawer_close {
-    background: none;
-    border: none;
-    color: var(--muted);
-    font-size: 18px;
-    line-height: 1;
-    padding: 4px 8px;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: color 0.15s, background 0.15s;
-}
-.drawer_close:hover { color: var(--text); background: var(--surface-2); }
 
 .drawer_item {
     padding: 12px 18px;

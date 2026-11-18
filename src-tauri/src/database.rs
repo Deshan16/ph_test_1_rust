@@ -1,6 +1,6 @@
 use crate::{
     error::AppErrors, types::{
-        BillingBatchSearch, BillingOrder, BillingOrderInfo, BillingProductSearch, InventoryBatchRow, InventoryProductRow, ReorderItem, Users,
+        BillingBatchSearch, BillingOrder, BillingOrderInfo, BillingProductSearch, ExpiredItem, InventoryBatchRow, InventoryProductRow, ReorderItem,
     },
 };
 use sqlx::MySqlPool;
@@ -90,17 +90,16 @@ pub async fn billing_get_batches(pool: State<'_, MySqlPool>, prod_id: i32) -> Re
 }
 
 #[tauri::command]
-pub async fn login_data(pool: State<'_, MySqlPool>, text: String) -> Result<Users, String> {
-    let row = sqlx::query_as::<_, Users>(
-        "
-            SELECT password, account_type FROM Users WHERE user_name = ?
-        ",
-    )
-    .bind(text)
-    .fetch_one(pool.inner())
-    .await
-    .map_err(|e| e.to_string())?;
-    Ok(row)
+pub async fn login_data(pool: State<'_, MySqlPool>, username: String, password: String) -> Result<bool, String> {
+    let found: i64 = sqlx::query_scalar("
+            SELECT EXISTS(SELECT 1 FROM Users WHERE user_name = ? AND password = ?);
+        ")
+        .bind(username)
+        .bind(password)
+        .fetch_one(pool.inner())
+        .await
+        .map_err(|e| e.to_string())?;
+    Ok(found == 1)
 }
 
 #[tauri::command]
@@ -109,9 +108,9 @@ pub async fn update_database(pool: State<'_, MySqlPool>, order: BillingOrder) ->
         .begin()
         .await
         .map_err(|e| AppErrors::FailedToUpdateDatabase(e.to_string()))?;
-
+    
     let now = chrono::Local::now();
-
+    
     let res1 = sqlx::query(
         "
             INSERT INTO Orders (order_date, order_time, total_amount, payment_method, order_status)
@@ -126,9 +125,9 @@ pub async fn update_database(pool: State<'_, MySqlPool>, order: BillingOrder) ->
     .execute(&mut *tx)
     .await
     .map_err(|e| AppErrors::FailedToUpdateDatabase(e.to_string()))?;
-
+    
     let order_id = res1.last_insert_id();
-
+    
     for item in &order.items {
         let res2 = sqlx::query(
             "
@@ -142,13 +141,14 @@ pub async fn update_database(pool: State<'_, MySqlPool>, order: BillingOrder) ->
         .execute(&mut *tx)
         .await
         .map_err(|e| AppErrors::FailedToUpdateDatabase(e.to_string()))?;
-
+        
+        
         if res2.rows_affected() == 0 {
             return Err(AppErrors::FailedToUpdateDatabase(
                 "No rows are updated".to_string(),
             ));
         }
-
+        
         sqlx::query(
             "UPDATE Batches SET is_active = FALSE WHERE batch_id = ? AND current_stock <= 0;",
         )
@@ -156,7 +156,8 @@ pub async fn update_database(pool: State<'_, MySqlPool>, order: BillingOrder) ->
         .execute(&mut *tx)
         .await
         .map_err(|e| AppErrors::FailedToUpdateDatabase(e.to_string()))?;
-
+        
+        
         sqlx::query(
             "
                 INSERT INTO Order_Details (order_id, batch_id, bought_quantity)
@@ -170,11 +171,11 @@ pub async fn update_database(pool: State<'_, MySqlPool>, order: BillingOrder) ->
         .await
         .map_err(|e| AppErrors::FailedToUpdateDatabase(e.to_string()))?;
     }
-
+    
     tx.commit()
         .await
         .map_err(|e| AppErrors::FailedToUpdateDatabase(e.to_string()))?;
-
+    
     Ok(BillingOrderInfo {
         order_id,
         order_date: now.format("%Y-%m-%d").to_string(),
@@ -210,6 +211,23 @@ pub async fn generate_reorder_list(pool: State<'_, MySqlPool>) -> Result<Vec<Reo
             ORDER BY shortfall DESC, p.name;
         ")
         .fetch_all(pool.inner())
+        .await
+        .map_err(|e| AppErrors::FailedToGetDataFromDatabase(e.to_string()))?;
+    Ok(rows)
+}
+
+#[tauri::command]
+pub async fn generate_expired_list(pool: State<'_, MySqlPool>) -> Result<Vec<ExpiredItem>, AppErrors> {
+    let rows = sqlx::query_as::<_, ExpiredItem>("
+            SELECT p.prod_id, p.prod_type, p.name, p.reorder_level,
+                m.company, m.generic_name, m.form, m.strength,
+                b.batch_id, b.batch_number, b.expiry_date, b.current_stock
+            FROM Product p
+            LEFT JOIN Medicines m ON p.prod_id = m.prod_id
+            LEFT JOIN Batches b ON p.prod_id = b.prod_id
+            WHERE b.expiry_date < CURDATE()
+            ORDER BY p.prod_id;
+        ").fetch_all(pool.inner())
         .await
         .map_err(|e| AppErrors::FailedToGetDataFromDatabase(e.to_string()))?;
     Ok(rows)

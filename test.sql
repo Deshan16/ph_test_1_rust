@@ -38,3 +38,13 @@ LEFT JOIN Batches b ON p.prod_id = b.prod_id AND b.is_active = TRUE
 GROUP BY p.prod_id, p.name, p.reorder_level
 HAVING stock <= p.reorder_level
 ORDER BY shortfall DESC, p.name;
+
+
+SELECT p.prod_id, p.prod_type, p.name, p.reorder_level,
+    m.company, m.generic_name,
+    b.batch_id, b.batch_number, b.expiry_date, b.current_stock
+FROM Product p
+LEFT JOIN Medicines m ON p.prod_id = m.prod_id
+LEFT JOIN Batches b ON p.prod_id = b.prod_id
+WHERE b.expiry_date < CURDATE()
+ORDER BY p.prod_id;

@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { InventoryProductRow, InventoryBatchRow, BillingProductRow, BillingBatchRow, UserData, BillingOrder, BillingOrderInfo, ReorderItems } from "./types";
+import { InventoryProductRow, InventoryBatchRow, BillingProductRow, BillingBatchRow, UserData, BillingOrder, BillingOrderInfo, ReorderItems, ExpiredItem } from "./types";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 
 /**
@@ -97,4 +97,8 @@ export async function openWindow(label: string, url: string, title: string) {
 
 export function getReorderItems(): Promise<ReorderItems[]> {
 	return invoke<ReorderItems[]>("generate_reorder_list");
+}
+
+export function getExpiredStock(): Promise<ExpiredItem[]> {
+	return invoke<ExpiredItem[]>("generate_expired_list");
 }

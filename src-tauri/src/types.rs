@@ -17,7 +17,7 @@ pub struct InventoryProductRow {
     pub generic_name: Option<String>,
     pub company: Option<String>,
     pub strength: Option<String>,
-    pub form: Option<String>,
+    pub form: Option<String>
 }
 
 /// Type definition of how Batch data of a product coming from the database.
@@ -32,7 +32,7 @@ pub struct InventoryBatchRow {
     pub expiry_date: NaiveDate,
     #[serde(with = "rust_decimal::serde::str")]
     pub current_stock: Decimal, // Explicit serialization to string when send to frontend.
-    pub in_expiry_period: bool, // if the batch is in expiration period, this is true.
+    pub in_expiry_period: bool // if the batch is in expiration period, this is true.
 }
 
 #[derive(Debug, sqlx::FromRow, serde::Serialize)]
@@ -45,7 +45,7 @@ pub struct BillingProductSearch {
     pub generic_name: Option<String>,
     pub company: Option<String>,
     pub strength: Option<String>,
-    pub form: Option<String>,
+    pub form: Option<String>
 }
 
 #[derive(Debug, sqlx::FromRow, serde::Serialize)]
@@ -57,13 +57,7 @@ pub struct BillingBatchSearch {
     pub expiry_date: NaiveDate,
     #[serde(with = "rust_decimal::serde::str")]
     pub current_stock: Decimal, // Explicit serialization to string when send to frontend.
-    pub in_expiry_period: bool, // if the batch is in expiration period, this is true.
-}
-
-#[derive(Debug, sqlx::FromRow, serde::Serialize)]
-pub struct Users {
-    pub password: String,
-    pub account_type: String,
+    pub in_expiry_period: bool // if the batch is in expiration period, this is true.
 }
 
 #[derive(Debug, serde::Deserialize)]
@@ -83,14 +77,14 @@ pub struct BillingOrder {
     pub total_amount: Decimal,
     pub payment_method: String,
     pub status: String,
-    pub items: Vec<BillingOrderItems>,
+    pub items: Vec<BillingOrderItems>
 }
 
 #[derive(Debug, serde::Serialize)]
 pub struct BillingOrderInfo {
     pub order_id: u64,
     pub order_date: String,
-    pub order_time: String,
+    pub order_time: String
 }
 
 #[derive(Debug, sqlx::FromRow, serde::Serialize)]
@@ -104,6 +98,21 @@ pub struct ReorderItem {
     pub stock: Decimal, // sum total of all the stock of batches.
     #[serde(with = "rust_decimal::serde::str")]
     pub shortfall: Decimal, 
+    // Medicine Specific Attributes.
+    pub generic_name: Option<String>,
+    pub company: Option<String>
+}
+
+#[derive(Debug, sqlx::FromRow, serde::Serialize)]
+pub struct ExpiredItem {
+    pub prod_id: i64,
+    pub prod_type: String,
+    pub name: String,
+    pub batch_id: i64,
+    pub batch_number: String,
+    pub expiry_date: NaiveDate,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub current_stock: Decimal, // Explicit serialization to string when send to frontend.
     // Medicine Specific Attributes.
     pub generic_name: Option<String>,
     pub company: Option<String>

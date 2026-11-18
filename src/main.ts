@@ -1,11 +1,18 @@
-import { inventory_get_batches, inventory_get_products, login_data, mustGet } from "./functions";
+import { invoke } from "@tauri-apps/api/core";
+import { mustGet } from "./functions";
 
-const username = mustGet<HTMLInputElement>("#username");
-const password = mustGet<HTMLInputElement>("#password");
+const form = mustGet<HTMLFormElement>("#login-form");
+const errorEl = mustGet<HTMLParagraphElement>("#login-error");
 
-mustGet<HTMLButtonElement>("#submit").addEventListener("click", async () => {
-	const loginData = await login_data(username.value);
-	if (loginData.password = password.value) {
-		window.location.href = "src/billing/page.html";
-	}
+form.addEventListener("submit", async (event: SubmitEvent) => {
+	event.preventDefault();
+	const data = new FormData(form);
+	
+	const ok = await invoke("login_data", {
+		username: data.get("username"),
+		password: data.get("password")
+	});
+	
+	if (ok) window.location.href = "src/billing/page.html"
+	else errorEl.hidden = false;
 });

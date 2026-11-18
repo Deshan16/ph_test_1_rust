@@ -33,6 +33,8 @@ export default defineConfig(() => ({
 				main: resolve(__dirname, "index.html"),
 				billing: resolve(__dirname, "src/billing/page.html"),
 				reorder: resolve(__dirname, "src/reorder/page.html"),
+				expired: resolve(__dirname, "src/expired/page.html"),
+				inventory: resolve(__dirname, "src/inventory/page.html")
 			}
 		}
 	}

@@ -1,9 +1,20 @@
 import { getReorderItems, mustGet } from "../functions";
 
 const reorderTable = mustGet<HTMLTableSectionElement>("#reorder_table tbody");
+const emptyLabel = mustGet<HTMLParagraphElement>("#empty");
 
 async function loadData() {
+    reorderTable.innerHTML = "";
     const rows = await getReorderItems()
+    
+    emptyLabel.hidden = true;
+    reorderTable.hidden = false;
+    
+    if (rows.length === 0) {
+        emptyLabel.hidden = false;
+        reorderTable.hidden = true;
+    }
+    
     rows.forEach((row) => {
         const tableRow = reorderTable.insertRow()
         
@@ -17,3 +28,5 @@ async function loadData() {
 }
 
 loadData();
+
+mustGet<HTMLButtonElement>("#refresh").addEventListener("click", async () => loadData());

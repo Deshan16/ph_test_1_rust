@@ -1,96 +1,168 @@
+/* =====================================================================
+   main.css: shared by every page.
+   Link it FIRST, then the page's own CSS, so the page can override it.
+   ===================================================================== */
+
+/* ---------- reset & tokens ---------- */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+[hidden] { display: none !important; }
+
 :root {
-	--bg: #0f1115;
+    --bg: #0f1115;
     --surface: #181b22;
     --surface-2: #1f232c;
     --border: #2a2f3a;
     --text: #e6e8ee;
     --muted: #8b92a3;
     --accent: #5b8def;
-	--danger: #ef4444;
+    --danger: #ef4444;
 
-    --critical-fill: #5c141a; --critical-edge: #ff2d3d;
-    --expiring-fill: #4a3515; --expiring-edge: #d99a2b;
+    --critical-fill: #5c141a;  --critical-edge: #ff2d3d;
+    --expiring-fill: #4a3515;  --expiring-edge: #d99a2b;
     --low-stock-fill: #35294f; --low-stock-edge: #9b7de8;
+    --expired-fill: var(--critical-fill); --expired-edge: var(--critical-edge);
 }
-
-* { box-sizing: border-box; }
 
 body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--text);
-  font-family: system-ui, sans-serif;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+    color: var(--text);
+    font: 14px "Inter", system-ui, sans-serif;
 }
 
-.login-wrap {
-  min-height: 100vh;
-  display: grid;
-  place-items: center;
+/* ---------- top bar ---------- */
+.top_bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+}
+.top_bar .title { flex: 1; font-size: 18px; font-weight: 600; }
+.top_bar button {
+    background: none;
+    border: none;
+    color: var(--text);
+    font-size: 22px;
+    cursor: pointer;
+    padding: 2px 8px;
+    border-radius: 6px;
+}
+.top_bar button:hover { background: var(--surface-2); }
+
+/* ---------- tables ---------- */
+table { border-collapse: collapse; }
+th, td {
+    padding: 10px 14px;
+    text-align: left;
+    white-space: nowrap;
+}
+th {
+    position: sticky;
+    top: 0;
+    background: var(--surface-2);
+    color: var(--muted);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--border);
+}
+td { border-bottom: 1px solid var(--border); }
+
+/* ---------- row states (work in any table) ---------- */
+tr.critical  { --fill: var(--critical-fill);  --edge: var(--critical-edge); }
+tr.expiring  { --fill: var(--expiring-fill);  --edge: var(--expiring-edge); }
+tr.low-stock { --fill: var(--low-stock-fill); --edge: var(--low-stock-edge); }
+tr.expired   { --fill: var(--expired-fill);   --edge: var(--expired-edge); }
+
+tr:is(.critical, .expiring, .low-stock, .expired) td { background: var(--fill); }
+tr:is(.critical, .expiring, .low-stock, .expired) td:first-child { box-shadow: inset 3px 0 0 var(--edge); }
+tr:is(.critical, .expiring, .low-stock, .expired):hover td { filter: brightness(1.25); }
+
+/* ---------- legend ---------- */
+.legend {
+    display: flex;
+    gap: 16px;
+    padding: 0 20px 8px;
+    color: var(--muted);
+    font-size: 12px;
+    cursor: default;
+}
+.legend_item::before {
+    content: "";
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    margin-right: 6px;
+    border-radius: 50%;
+}
+.legend_item.critical::before  { background: var(--critical-edge); }
+.legend_item.expiring::before  { background: var(--expiring-edge); }
+.legend_item.low-stock::before { background: var(--low-stock-edge); }
+
+/* ---------- search box (page CSS sets padding and background) ---------- */
+.search { display: flex; gap: 8px; }
+.search input {
+    flex: 1;
+    padding: 10px 14px;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    outline: none;
+}
+.search input:focus { border-color: var(--accent); }
+
+.search .clear {
+    padding: 0 16px;
+    background: var(--surface);
+    color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.search .clear:hover { color: var(--text); background: var(--surface-2); border-color: var(--accent); }
+.search .clear:active { transform: translateY(1px); }
+
+/* ---------- overlay + popup windows ---------- */
+.overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 100;
 }
 
-.login-card {
-  width: 320px;
-  padding: 32px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+/* every popup shares this frame; each page sets its own size and layout */
+.search_window,
+.checkout_window,
+.confirm_box,
+.batch_window {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 101;               /* above .overlay (100) */
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
 }
 
-.login-card h1 { margin: 0 0 12px; font-size: 1.4rem; }
 
-.field {
-  position: relative;
-  margin-top: 14px;
+.list_box {
+    flex: 1;
+    margin: 20px;
+    overflow: auto;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    
+    table {
+        width: 100%;
+    }
 }
 
-.field input {
-  width: 100%;
-  padding: 14px 12px 8px;   /* extra top padding leaves room for the floated label */
-  background: var(--bg);
-  color: var(--text);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  font-size: 1rem;
-}
-
-.field input:focus {
-  outline: none;
-  border-color: var(--accent);
-}
-
-.field label {
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--muted);
-  pointer-events: none;      /* clicks pass through to the input */
-  transition: all 0.15s ease;
-}
-
-/* floated state: focused OR has text */
-.field input:focus + label,
-.field input:not(:placeholder-shown) + label {
-  top: 0px;
-  transform: none;
-  font-size: 0.7rem;
-  color: var(--accent);
-}
-
-button {
-  margin-top: 12px;
-  padding: 10px;
-  background: var(--accent);
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  font-size: 1rem;
-  cursor: pointer;
-}
-
-button:hover { filter: brightness(1.1); }
-
-.error { margin: 4px 0 0; color: var(--danger); font-size: 0.85rem; }
+.empty { padding: 32px; text-align: center; color: var(--muted); }

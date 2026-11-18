@@ -108,3 +108,16 @@ export interface ReorderItems {
     generic_name: string | null,
     company: string | null
 }
+
+export interface ExpiredItem {
+    prod_id: number,
+    prod_type: string,
+    name: string,
+    batch_id: number,
+    batch_number: string,
+    expiry_date: string,
+    current_stock: string, // Explicit serialization to string when send to frontend.
+    // Medicine Specific Attributes.
+    generic_name: string | null,
+    company: string | null
+}
