@@ -1,5 +1,5 @@
 import { BillingBatchRow, BillingOrder, BillingOrderItem, BillingProductRow, LABELS } from "../types";
-import { batchRowColorPicker, billingGetBatches, billingGetProducts, billingUpdateDatabase, mustGet, openWindow, prodRowColorPicker } from "../functions";
+import { batchRowColorPicker, billingGetBatches, billingGetProducts, billingUpdateDatabase, inputFilter, mustGet, openWindow, prodRowColorPicker } from "../functions";
 import Decimal from "decimal.js";
 import { makeReceipts, saveReceipt } from "./receipts";
 
@@ -167,12 +167,15 @@ function batchRowBuilder(batchTableRow: HTMLTableRowElement, batchRow: BillingBa
     batchTableRow.insertCell().innerText = batchRow.batch_number;
     batchTableRow.insertCell().innerText = batchRow.unit_sell_price;
     batchTableRow.insertCell().innerText = batchRow.expiry_date;
+    const remainingCell = batchTableRow.insertCell();
+    remainingCell.innerText = String(batchRow.remaining);
     batchTableRow.insertCell().innerText = batchRow.current_stock;
     
     const cls = batchRowColorPicker(batchRow);
     if (cls) {
         batchTableRow.classList.add(cls);
         batchTable.title = LABELS[cls];
+        remainingCell.classList.add("danger");
     }
 }
 
@@ -265,7 +268,7 @@ itemRowOptionMenu.addEventListener("click", (event: PointerEvent) => {
             break;
         
         case "edit":
-            const input = activeBillingRow.cells[4].querySelector<HTMLInputElement>("input")
+            const input = activeBillingRow.cells[4].querySelector<HTMLInputElement>("input");
             if (input) {
                 input.disabled = false;
                 input.focus();
@@ -345,6 +348,7 @@ function closeCancelOrderPopUp(): void {
 
 checkoutButton.addEventListener("click", () => {
     checkoutWindow.hidden = false;
+    checkoutWindowNextCustomerButton.disabled = true;
     overlay.classList.add("active");
     checkoutWindowItemCount.innerText = String(cart.items.length);
     checkoutWindowTotal.innerText = grandTotalField.textContent;
@@ -423,13 +427,6 @@ checkoutWindowPaymentMethod.addEventListener("change", () => {
     }
 });
 
-function inputFilter(input: HTMLInputElement): void {
-    let cleaned = input.value.replace(/[^0-9.]/g, '');
-    const parts = cleaned.split('.');
-    if (parts.length > 2) cleaned = parts[0] + '.' + parts.slice(1).join('');
-    input.value = cleaned;
-}
-
 mustGet<HTMLButtonElement>("#menu_btn").addEventListener("click", () => toggleDrawer(true));
 mustGet<HTMLButtonElement>("#drawer_close").addEventListener("click", () => toggleDrawer(false));
 
@@ -440,7 +437,11 @@ function toggleDrawer(open: boolean) {
 }
 
 document.addEventListener("keydown", (event: KeyboardEvent) => {
-    if (event.key === "Escape") toggleDrawer(false);
+    if (event.key === "Escape") {
+        toggleDrawer(false);
+        if (!searchWindow.hidden) closeSearchWindow();
+        if (!cancelPopUpBox.hidden) closeCancelOrderPopUp();
+    }
 });
 
 drawer.querySelectorAll<HTMLButtonElement>(".drawer_item").forEach((btn) => {

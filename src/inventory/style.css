@@ -20,6 +20,18 @@
     background: var(--surface);
 }
 
+#invn_table input[type="text"] {
+    width: 72px;
+    padding: 4px 8px;
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    outline: none;
+    text-align: right;
+}
+#invn_table input[type="text"]:focus { border-color: var(--accent); }
+
 #invn_table,
 #batch_table { width: 100%; }
 
@@ -35,3 +47,44 @@ th { text-decoration: underline; }
     max-height: 70vh;
     overflow: auto;
 }
+
+.row_menu_btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 18px;
+    line-height: 1;
+    padding: 4px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: color 0.15s, background 0.15s;
+}
+
+.row_menu_btn:hover { color: var(--text); background: var(--surface-2); }
+.row_menu_btn:focus-visible { outline: 1px solid var(--accent); }
+
+.row_menu {
+    position: fixed;          /* escapes the table's overflow clipping */
+    z-index: 50;              /* below overlay (100) and the windows (101) */
+    min-width: 150px;
+    padding: 4px;
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+.row_menu_item {
+    padding: 8px 12px;
+    background: none;
+    border: none;
+    border-radius: 6px;
+    color: var(--text);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.row_menu_item:hover,
+.row_menu_item:focus-visible { background: var(--surface-2); outline: none; }

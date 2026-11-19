@@ -3,6 +3,7 @@
    ===================================================================== */
 
 /* ---------- tables (billing overrides) ---------- */
+
 .billing_table,
 .search_table_box,
 .search_batch_results {
@@ -19,6 +20,11 @@ th, td {
     max-width: 280px;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+td.danger {
+    color: var(--critical-edge);
+    font-weight: bold;
 }
 
 /* clickable rows only in the search window */

@@ -13,6 +13,7 @@ pub struct InventoryProductRow {
     pub stock: Decimal, // sum total of all the stock of batches.
     pub in_expiry_period: bool, // if one of the batch is in the expiration period, this is true.
     pub low_stock: bool,
+    pub expiry_warning_days: i64,
     // Medicine Specific Attributes.
     pub generic_name: Option<String>,
     pub company: Option<String>,
@@ -57,7 +58,8 @@ pub struct BillingBatchSearch {
     pub expiry_date: NaiveDate,
     #[serde(with = "rust_decimal::serde::str")]
     pub current_stock: Decimal, // Explicit serialization to string when send to frontend.
-    pub in_expiry_period: bool // if the batch is in expiration period, this is true.
+    pub in_expiry_period: bool, // if the batch is in expiration period, this is true.
+    pub remaining: i64
 }
 
 #[derive(Debug, serde::Deserialize)]

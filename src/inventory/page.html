@@ -10,22 +10,22 @@
 </head>
 <body>
     <div class="top_bar">
-        <div class="nav_drawer">
-            <button>≡</button>
-        </div>
         <div class="title">
             <span>Inventory</span>
         </div>
     </div>
+    
     <div class="search">
         <input type="text" id="search_text" placeholder="Type here to search">
         <button class="clear" hidden>Clear</button>
     </div>
+    
     <div class="legend">
         <span class="legend_item critical">Low in stock + In Expiry Period</span>
         <span class="legend_item expiring">Expiring soon</span>
         <span class="legend_item low-stock">Low stock</span>
     </div>
+    
     <div class="inventory_display">
         <table id="invn_table">
             <thead>
@@ -39,11 +39,14 @@
                     <th>Strength</th>
                     <th>Stock</th>
                     <th>Reorder Level</th>
+                    <th>Expiry Warning</th>
+                    <th></th>
                 </tr>
             </thead>
             <tbody></tbody>
         </table>
     </div>
+    
     <div class="batch_window" hidden>
         <table id="batch_table">
             <thead>
@@ -58,7 +61,13 @@
             </thead>
             <tbody></tbody>
         </table>
-    </div> 
+    </div>
+    
     <div class="overlay" hidden></div>
+    
+    <div class="row_menu" id="row_menu" hidden>
+        <button type="button" class="row_menu_item" data-action="enable_reorder">Edit Reorder level</button>
+        <button type="button" class="row_menu_item" data-action="enable_expiry">Edit Expiry Warning</button>
+    </div>
 </body>
 </html>

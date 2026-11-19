@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { InventoryProductRow, InventoryBatchRow, BillingProductRow, BillingBatchRow, UserData, BillingOrder, BillingOrderInfo, ReorderItems, ExpiredItem } from "./types";
+import { InventoryProductRow, InventoryBatchRow, BillingProductRow, BillingBatchRow, BillingOrder, BillingOrderInfo, ReorderItems, ExpiredItem } from "./types";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 
 /**
@@ -7,7 +7,7 @@ import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
  *  @param text text that use to query in the database to narrow down the product.
  *  @returns Array containing the products.
  */ 
-export function inventory_get_products(text: string): Promise<InventoryProductRow[]> {
+export function inventoryGetProducts(text: string): Promise<InventoryProductRow[]> {
 	return invoke<InventoryProductRow[]>("inventory_get_products", { text: text });
 }
 
@@ -16,7 +16,7 @@ export function inventory_get_products(text: string): Promise<InventoryProductRo
  *  @param prodId ID of the product that need to expand to see all of its batches.
  *  @returns Array containing the batches.
  */
-export function inventory_get_batches(prodId: number): Promise<InventoryBatchRow[]> {
+export function inventoryGetBatches(prodId: number): Promise<InventoryBatchRow[]> {
 	return invoke<InventoryBatchRow[]>("inventory_get_batches", { prodId: prodId });
 }
 
@@ -48,10 +48,6 @@ export function mustGet<T extends Element>(selector: string): T {
 	const element = document.querySelector<T>(selector);
 	if (!element) throw new Error(`'${selector}' is not found`);
 	return element;
-}
-
-export function login_data(text: string): Promise<UserData> {
-	return invoke<UserData>("login_data", { text: text });
 }
 
 // export function billingSendCart(batchList: BillingOrderItem[]) {
@@ -101,4 +97,19 @@ export function getReorderItems(): Promise<ReorderItems[]> {
 
 export function getExpiredStock(): Promise<ExpiredItem[]> {
 	return invoke<ExpiredItem[]>("generate_expired_list");
+}
+
+export function inventoryUpdateReorderLevel(prod_id: number, value: number): Promise<void> {
+	return invoke("inventory_update_reorder_level", { prod_id: prod_id, value: value });
+}
+
+export function inventoryUpdateExpiryWarning(prod_id: number, value: number): Promise<void> {
+	return invoke("inventory_update_expiry_warning", { prod_id: prod_id, value: value });
+}
+
+export function inputFilter(input: HTMLInputElement): void {
+	let cleaned = input.value.replace(/[^0-9.]/g, '');
+	const parts = cleaned.split('.');
+	if (parts.length > 2) cleaned = parts[0] + '.' + parts.slice(1).join('');
+	input.value = cleaned;
 }

@@ -1,85 +1,195 @@
-import { LABELS, InventoryProductRow } from "../types";
-import { batchRowColorPicker, inventory_get_batches, inventory_get_products, mustGet, prodRowColorPicker } from "../functions";
+import { InventoryBatchRow, InventoryProductRow, LABELS } from "../types";
+import { batchRowColorPicker, inputFilter, inventoryGetBatches, inventoryGetProducts, inventoryUpdateExpiryWarning, inventoryUpdateReorderLevel, mustGet, prodRowColorPicker } from "../functions";
 
-const product_table_body = mustGet<HTMLTableSectionElement>("#invn_table tbody");
-const text_input = mustGet<HTMLInputElement>("#search_text");
-const clear_button = mustGet<HTMLButtonElement>(".clear");
-const batch_window = mustGet<HTMLDivElement>(".batch_window");
-const batch_tbody = mustGet<HTMLTableSectionElement>("#batch_table tbody");
+const productTableBody = mustGet<HTMLTableSectionElement>("#invn_table tbody");
+const textInput = mustGet<HTMLInputElement>("#search_text");
+const clearButton = mustGet<HTMLButtonElement>(".clear");
+const batchWindow = mustGet<HTMLDivElement>(".batch_window");
+const batchTbody = mustGet<HTMLTableSectionElement>("#batch_table tbody");
 const overlay = mustGet<HTMLDivElement>(".overlay");
+const itemRowOptionMenu = mustGet<HTMLDivElement>("#row_menu");
 
+let activeInventoryRow: HTMLTableRowElement | null;
 
 /**
  *  Load the data table.
  *  Take all of the rows from backend and render them in the frontend.
  *  @param text text that use to query in the database to narrow down the product.
  */
-async function load_table(text:string) {
-    const product_rows = await inventory_get_products(text);
+async function loadData(text:string) {
+    const product_rows = await inventoryGetProducts(text);
     
-    product_table_body.innerHTML = '';
+    productTableBody.innerHTML = '';
     
-    product_rows.forEach((product_row) => {
-        const product_trow = product_table_body.insertRow()
+    product_rows.forEach((prodRow) => {
+        const invTableRow = productTableBody.insertRow()
+        inventoryRowBuilder(invTableRow, prodRow);
         
-        product_trow.insertCell().innerText = String(product_row.prod_id);
-        product_trow.insertCell().innerText = product_row.prod_type === "gro" ? "Grocery" : "Medicine";
-        product_trow.insertCell().innerText = product_row.name;
-        product_trow.insertCell().innerText = product_row.generic_name ? product_row.generic_name : '-';
-        product_trow.insertCell().innerText = product_row.company ? product_row.company : '-';
-        product_trow.insertCell().innerText = product_row.form ? product_row.form : '-';
-        product_trow.insertCell().innerText = product_row.strength ? product_row.strength : '-';
-        product_trow.insertCell().innerText = product_row.stock;
-        product_trow.insertCell().innerText = product_row.reorder_level;
-        
-        const cls = prodRowColorPicker(product_row);
-        
-        if (cls) {
-            product_trow.classList.add(cls);   // Add to the class list to visually identify the state of the row.
-            product_trow.title = LABELS[cls];  // Add a hint text
-        }
-        
-        product_trow.addEventListener("click", async () => {
-            batch_window.hidden = false;
+        invTableRow.addEventListener("dblclick", async () => {
+            batchWindow.hidden = false;
             overlay.hidden = false;
-            batch_tbody.innerHTML = '';
+            batchTbody.innerHTML = '';
             
-            const batch_rows = await inventory_get_batches(product_row.prod_id);
+            const batch_rows = await inventoryGetBatches(prodRow.prod_id);
             
-            batch_rows.forEach((batch_row) => {
-                const batch_trow = batch_tbody.insertRow();
-                
-                batch_trow.insertCell().innerText = String(batch_row.batch_id);
-                batch_trow.insertCell().innerText = batch_row.batch_number;
-                batch_trow.insertCell().innerText = batch_row.unit_bought_price;
-                batch_trow.insertCell().innerText = batch_row.unit_sell_price;
-                batch_trow.insertCell().innerText = batch_row.expiry_date;
-                batch_trow.insertCell().innerText = batch_row.current_stock;
-                
-                const cls = batchRowColorPicker(batch_row);
-                if (cls) batch_trow.classList.add(cls);
+            batch_rows.forEach((batchRow) => {
+                const batchTableRow = batchTbody.insertRow();
+                inventoryBatchRowBuilder(batchTableRow, batchRow)
             });
         });
     });
 }
 
 // logic for input. when typing it refresh the table with newest received data.
-text_input.addEventListener("input",() => {
-    clear_button.hidden = text_input.value === '';  // display the clear button.
-    load_table(text_input.value)
+textInput.addEventListener("input",() => {
+    clearButton.hidden = textInput.value === '';  // display the clear button.
+    loadData(textInput.value)
 });
 
-load_table(""); // initial load.
+loadData(""); // initial load.
 
 // logic for clear button. when clicked the input get cleared.
-clear_button.addEventListener("click", () => {
-    text_input.value = '';
-    clear_button.hidden = text_input.value === '';  // hide the clear button.
-    load_table('');
-    text_input.focus();
+clearButton.addEventListener("click", () => {
+    textInput.value = '';
+    clearButton.hidden = textInput.value === '';  // hide the clear button.
+    loadData('');
+    textInput.focus();
 });
 
 overlay.addEventListener("click", () => {
-    batch_window.hidden = true;
+    batchWindow.hidden = true;
     overlay.hidden = true;
-})
+});
+
+document.addEventListener("keydown", (event: KeyboardEvent) => {
+    if (event.key === "Escape") {
+        batchWindow.hidden = true;
+        overlay.hidden = true;
+    }
+});
+
+function inventoryRowBuilder(invTableRow: HTMLTableRowElement, prodRow: InventoryProductRow) {
+    invTableRow.insertCell().innerText = String(prodRow.prod_id);
+    invTableRow.insertCell().innerText = prodRow.prod_type === "gro" ? "Grocery" : "Medicine";
+    invTableRow.insertCell().innerText = prodRow.name;
+    invTableRow.insertCell().innerText = prodRow.generic_name ? prodRow.generic_name : '-';
+    invTableRow.insertCell().innerText = prodRow.company ? prodRow.company : '-';
+    invTableRow.insertCell().innerText = prodRow.form ? prodRow.form : '-';
+    invTableRow.insertCell().innerText = prodRow.strength ? prodRow.strength : '-';
+    invTableRow.insertCell().innerText = prodRow.stock;
+    
+    const input1 = inventoryReorderLevelInput(prodRow.reorder_level);
+    input1.addEventListener("blur", () => {
+        inventoryUpdateReorderLevel(prodRow.prod_id, parseInt(input1.value));
+    });
+    invTableRow.insertCell().appendChild(input1);
+    
+    const input2 = inventoryExpiryWarningInput(String(prodRow.expiry_warning_days))
+    input2.addEventListener("blur", () => {
+        inventoryUpdateExpiryWarning(prodRow.prod_id, prodRow.expiry_warning_days);
+    });
+    invTableRow.insertCell().appendChild(input2);
+    
+    invTableRow.insertCell().appendChild(inventoryOptionButton())
+    
+    const cls = prodRowColorPicker(prodRow);
+    
+    if (cls) {
+        invTableRow.classList.add(cls);   // Add to the class list to visually identify the state of the row.
+        invTableRow.title = LABELS[cls];  // Add a hint text
+    }
+    
+    invTableRow.setAttribute("data-id", String(prodRow.prod_id));
+}
+
+function inventoryBatchRowBuilder(batchTableRow: HTMLTableRowElement, batchRow: InventoryBatchRow): void {
+    batchTableRow.insertCell().innerText = String(batchRow.batch_id);
+    batchTableRow.insertCell().innerText = batchRow.batch_number;
+    batchTableRow.insertCell().innerText = batchRow.unit_bought_price;
+    batchTableRow.insertCell().innerText = batchRow.unit_sell_price;
+    batchTableRow.insertCell().innerText = batchRow.expiry_date;
+    batchTableRow.insertCell().innerText = batchRow.current_stock;
+    
+    const cls = batchRowColorPicker(batchRow);
+    if (cls) batchTableRow.classList.add(cls);
+}
+
+function inventoryOptionButton(): HTMLButtonElement {
+    const button = document.createElement("button");
+    button.classList.add("row_menu_btn");
+    button.type = "button";
+    button.innerHTML = "&#8943;";
+    button.setAttribute("aria-label", "Item options");
+    
+    button.addEventListener("click", (event: PointerEvent) => {
+        event.stopPropagation();
+        activeInventoryRow = button.closest("tr");
+        
+        const rect = button.getBoundingClientRect();
+        
+        itemRowOptionMenu.hidden = false;
+        itemRowOptionMenu.style.top = `${rect.bottom + 4}px`;
+        itemRowOptionMenu.style.left = `${rect.right - itemRowOptionMenu.offsetWidth}px`
+    });
+    return button;
+}
+
+document.addEventListener("click", () => {
+    itemRowOptionMenu.hidden = true;
+});
+
+function inventoryReorderLevelInput(value: string) {
+    const input = document.createElement("input");
+    input.type = "text";
+    input.value = value;
+    input.disabled = true;
+    
+    input.addEventListener("input", () => inputFilter(input));
+    
+    input.addEventListener("keydown", (event: KeyboardEvent) => {
+        if (event.key === "Enter") input.blur();
+    });
+    
+    return input;
+}
+
+function inventoryExpiryWarningInput(value: string) {
+    const input = document.createElement("input");
+    input.type = "text";
+    input.value = value;
+    input.disabled = true;
+    
+    input.addEventListener("input", () => {
+        let cleaned = input.value.replace(/[^0-9]/g, '');
+        input.value = cleaned;
+    });
+    
+    input.addEventListener("keydown", (event: KeyboardEvent) => {
+        if (event.key === "Enter") input.blur();
+    });
+    
+    return input;
+}
+
+itemRowOptionMenu.addEventListener("click", (event: PointerEvent) => {
+    const item = (event.target as HTMLElement).closest<HTMLButtonElement>(".row_menu_item");
+    if (!activeInventoryRow || !item) return;
+    
+    switch (item.getAttribute("data-action")) {
+        case "enable_reorder":
+            const inp1 = activeInventoryRow.cells[8].querySelector("input");
+            if (inp1) {
+                inp1.disabled = false;
+                inp1.focus()
+            }
+            break;
+            
+            case "enable_expiry":
+                const inp2 = activeInventoryRow.cells[9].querySelector("input");
+                if (inp2) {
+                    inp2.disabled = false;
+                    inp2.focus()
+                }
+            break;
+    }
+});

@@ -19,7 +19,9 @@ fn log_to_file(msg: String) {
 
 #[derive(Debug)]
 pub enum AppErrors {
+    #[allow(dead_code)]
     FailedToGetDataFromDatabase(String),
+    #[allow(dead_code)]
     FailedToUpdateDatabase(String),
 }
 

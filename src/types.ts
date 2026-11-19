@@ -8,7 +8,8 @@ export interface InventoryProductRow {
     reorder_level: string,
     stock: string,
     in_expiry_period: boolean,
-    low_stock: boolean
+    low_stock: boolean,
+    expiry_warning_days: number,
     // Medicine Specific Attributes.
     generic_name: string | null,
     company: string | null,
@@ -56,12 +57,8 @@ export interface BillingBatchRow {
     unit_sell_price: string,
     expiry_date: string,
     current_stock: string,
-    in_expiry_period: boolean 
-}
-
-export interface UserData {
-    password: string,
-    account_type: string
+    in_expiry_period: boolean,
+    remaining: number
 }
 
 export interface BillingOrderItem {

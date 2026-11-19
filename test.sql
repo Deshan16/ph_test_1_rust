@@ -1,4 +1,4 @@
-SELECT p.prod_id, p.prod_type, p.name, p.reorder_level,
+SELECT p.prod_id, p.prod_type, p.name, p.reorder_level, p.expiry_warning_days,
     m.company, m.generic_name, m.form, m.strength,
     COALESCE(SUM(CASE WHEN b.expiry_date >= CURDATE() THEN b.current_stock END), 0) AS stock,
     COALESCE(MAX(b.expiry_date < CURDATE() AND b.current_stock > 0), 0) AS expired,
@@ -48,3 +48,10 @@ LEFT JOIN Medicines m ON p.prod_id = m.prod_id
 LEFT JOIN Batches b ON p.prod_id = b.prod_id
 WHERE b.expiry_date < CURDATE()
 ORDER BY p.prod_id;
+
+SELECT b.batch_id, b.batch_number, b.unit_sell_price, b.expiry_date, b.current_stock,
+    b.expiry_date >= CURDATE() AND b.current_stock > 0 AND b.expiry_date <= DATE_ADD(CURDATE(), INTERVAL p.expiry_warning_days DAY) AS in_expiry_period,
+    b.expiry_date - CURDATE() AS remaining
+FROM Batches b
+LEFT JOIN Product p ON b.prod_id = p.prod_id
+WHERE b.prod_id = 1 AND b.is_active = TRUE;

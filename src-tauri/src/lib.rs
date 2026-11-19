@@ -32,7 +32,9 @@ pub fn run() {
             database::login_data,
             database::update_database,
             database::generate_reorder_list,
-            database::generate_expired_list
+            database::generate_expired_list,
+            database::inventory_update_reorder_level,
+            database::inventory_update_expiry_warning
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

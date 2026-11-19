@@ -81,6 +81,7 @@
                         <th>Batch Number</th>
                         <th>Unit Sell Price</th>
                         <th>Expiry Date</th>
+                        <th>Remaining Days</th>
                         <th>Current Stock</th>
                     </tr>
                 </thead>
@@ -128,18 +129,20 @@
             <button class="btn btn_primary" id="next_customer" disabled>Next customer</button>
         </div>
     </div>
+    
     <div class="overlay"></div>
+    
     <div class="row_menu" id="row_menu" hidden>
         <button type="button" class="row_menu_item" data-action="edit">Edit</button>
-        <!-- <button type="button" class="row_menu_item" data-action="discount">Discount</button> -->
         <button type="button" class="row_menu_item row_menu_danger" data-action="remove">Remove</button>
     </div>
-    <!-- next to .checkout_window -->
+    
     <div class="confirm_box" id="cancel_confirm" role="alertdialog" aria-labelledby="confirm_title" hidden>
         <div class="confirm_body">
             <span class="confirm_title" id="confirm_title">Cancel this order?</span>
             <span class="confirm_text">All items will be removed from the bill.</span>
         </div>
+        
         <div class="confirm_footer">
             <button type="button" class="btn" id="confirm_no">Keep order</button>
             <button type="button" class="btn btn_danger" id="confirm_yes">Cancel order</button>
