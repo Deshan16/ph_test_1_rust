@@ -2,13 +2,6 @@
    inventory/style.css: inventory page only. Link after ../main.css.
    ===================================================================== */
 
-/* ---------- search ---------- */
-.search { padding: 16px 20px 8px; }
-.search input {
-    max-width: 420px;
-    background: var(--surface);
-}
-.search .clear[hidden] { display: none; }
 
 /* ---------- inventory table ---------- */
 .inventory_display {
@@ -35,7 +28,6 @@
 #invn_table,
 #batch_table { width: 100%; }
 
-th { text-decoration: underline; }
 #invn_table th { cursor: default; }
 #invn_table td { cursor: pointer; }
 
@@ -88,3 +80,22 @@ th { text-decoration: underline; }
 }
 .row_menu_item:hover,
 .row_menu_item:focus-visible { background: var(--surface-2); outline: none; }
+
+/* ---------- summary bar ---------- */
+.summary_bar {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    flex-shrink: 0;               /* body is a flex column, don't let it get squashed */
+    margin: 0 20px 20px;
+    padding: 10px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--muted);
+    font-size: 13px;
+    cursor: default;
+}
+.summary_item strong { color: var(--text); font-weight: 600; }
+.summary_total { margin-left: auto; font-size: 1.2rem; }          /* pushes the total to the right */
+.summary_total strong { color: var(--accent); font-size: 1.3rem; }

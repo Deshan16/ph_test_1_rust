@@ -34,7 +34,8 @@ export default defineConfig(() => ({
 				billing: resolve(__dirname, "src/billing/page.html"),
 				reorder: resolve(__dirname, "src/reorder/page.html"),
 				expired: resolve(__dirname, "src/expired/page.html"),
-				inventory: resolve(__dirname, "src/inventory/page.html")
+				inventory: resolve(__dirname, "src/inventory/page.html"),
+				add_stock: resolve(__dirname, "src/add_stock/page.html")
 			}
 		}
 	}

@@ -46,7 +46,7 @@ SELECT p.prod_id, p.prod_type, p.name, p.reorder_level,
 FROM Product p
 LEFT JOIN Medicines m ON p.prod_id = m.prod_id
 LEFT JOIN Batches b ON p.prod_id = b.prod_id
-WHERE b.expiry_date < CURDATE()
+HAVING b.expiry_date < CURDATE() AND p.name LIKE "p%"
 ORDER BY p.prod_id;
 
 SELECT b.batch_id, b.batch_number, b.unit_sell_price, b.expiry_date, b.current_stock,
@@ -55,3 +55,7 @@ SELECT b.batch_id, b.batch_number, b.unit_sell_price, b.expiry_date, b.current_s
 FROM Batches b
 LEFT JOIN Product p ON b.prod_id = p.prod_id
 WHERE b.prod_id = 1 AND b.is_active = TRUE;
+
+SELECT P.prod_id, P.prod_type, P.name, M.generic_name, M.company, M.form, M.strength
+FROM Product P LEFT JOIN Medicines M ON M.prod_id = P.prod_id
+WHERE P.name LIKE "Panadol%" OR M.generic_name LIKE "Panadol%" OR M.company LIKE "Panadol%";

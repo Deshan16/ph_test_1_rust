@@ -12,8 +12,14 @@
         <div class="title"><span>Expired batch list</span></div>
         <button id="refresh" aria-label="Refresh">↻</button>
     </div>
+    
+    <div class="search">
+        <input type="text" id="search_text" placeholder="Type here to search">
+        <button class="clear" hidden>Clear</button>
+    </div>
+    
     <div class="list_box">
-        <table id="reorder_table">
+        <table id="expired_table">
             <thead>
                 <tr>
                     <th>Product ID</th>

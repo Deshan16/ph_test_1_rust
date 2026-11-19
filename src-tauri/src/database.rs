@@ -1,6 +1,6 @@
 use crate::{
     error::AppErrors, types::{
-        BillingBatchSearch, BillingOrder, BillingOrderInfo, BillingProductSearch, ExpiredItem, InventoryBatchRow, InventoryProductRow, ReorderItem,
+        BillingBatchSearch, BillingOrder, BillingOrderInfo, BillingProductSearch, ExpiredItem, InventoryBatchRow, InventoryProductRow, ReorderItem, StockProductSearch,
     },
 };
 use sqlx::MySqlPool;
@@ -15,7 +15,8 @@ pub async fn inventory_get_products(pool: State<'_, MySqlPool>, text: String) ->
                 m.company, m.generic_name, m.strength, m.form,
                 COALESCE(SUM(CASE WHEN b.expiry_date >= CURDATE() THEN b.current_stock END), 0) AS stock,
                 COALESCE(SUM(CASE WHEN b.expiry_date >= CURDATE() THEN b.current_stock END), 0) <= p.reorder_level AS low_stock,
-                COALESCE(MAX(b.expiry_date >= CURDATE() AND b.current_stock > 0 AND b.expiry_date <= DATE_ADD(CURDATE(), INTERVAL p.expiry_warning_days DAY)), 0) AS in_expiry_period
+                COALESCE(MAX(b.expiry_date >= CURDATE() AND b.current_stock > 0 AND b.expiry_date <= DATE_ADD(CURDATE(), INTERVAL p.expiry_warning_days DAY)), 0) AS in_expiry_period,
+                COALESCE(SUM(b.current_stock * b.unit_bought_price), 0) AS total_value
             FROM Product p
             LEFT JOIN Medicines m ON p.prod_id = m.prod_id
             LEFT JOIN Batches b ON p.prod_id = b.prod_id
@@ -78,7 +79,7 @@ pub async fn inventory_update_reorder_level(pool: State<'_, MySqlPool>, prod_id:
 }
 
 #[tauri::command]
-pub async fn inventory_update_expiry_warning(pool: State<'_, MySqlPool>, prod_id: i64, value: String) -> Result<(), AppErrors> {
+pub async fn inventory_update_expiry_warning(pool: State<'_, MySqlPool>, prod_id: i64, value: i64) -> Result<(), AppErrors> {
     let mut tx = pool
         .begin()
         .await
@@ -246,7 +247,8 @@ pub async fn deactivate_batches(pool: &MySqlPool) -> Result<u64, AppErrors> {
 }
 
 #[tauri::command]
-pub async fn generate_reorder_list(pool: State<'_, MySqlPool>) -> Result<Vec<ReorderItem>, AppErrors> {
+pub async fn generate_reorder_list(pool: State<'_, MySqlPool>, text: String) -> Result<Vec<ReorderItem>, AppErrors> {
+    let parameter = format!("%{}%", text);
     let rows = sqlx::query_as::<_, ReorderItem>("
             SELECT p.prod_id, p.prod_type, p.name, p.reorder_level,
                 m.company, m.generic_name,
@@ -256,9 +258,12 @@ pub async fn generate_reorder_list(pool: State<'_, MySqlPool>) -> Result<Vec<Reo
             LEFT JOIN Medicines m ON p.prod_id = m.prod_id
             LEFT JOIN Batches b ON p.prod_id = b.prod_id AND b.is_active = TRUE
             GROUP BY p.prod_id, p.name, p.reorder_level
-            HAVING stock <= p.reorder_level
+            HAVING stock <= p.reorder_level AND (p.name LIKE ? OR m.generic_name LIKE ? OR m.company LIKE ?)
             ORDER BY shortfall DESC, p.name;
         ")
+        .bind(&parameter)
+        .bind(&parameter)
+        .bind(&parameter)
         .fetch_all(pool.inner())
         .await
         .map_err(|e| AppErrors::FailedToGetDataFromDatabase(e.to_string()))?;
@@ -266,7 +271,8 @@ pub async fn generate_reorder_list(pool: State<'_, MySqlPool>) -> Result<Vec<Reo
 }
 
 #[tauri::command]
-pub async fn generate_expired_list(pool: State<'_, MySqlPool>) -> Result<Vec<ExpiredItem>, AppErrors> {
+pub async fn generate_expired_list(pool: State<'_, MySqlPool>, text: String) -> Result<Vec<ExpiredItem>, AppErrors> {
+    let parameter = format!("%{}%", text);
     let rows = sqlx::query_as::<_, ExpiredItem>("
             SELECT p.prod_id, p.prod_type, p.name, p.reorder_level,
                 m.company, m.generic_name, m.form, m.strength,
@@ -274,10 +280,32 @@ pub async fn generate_expired_list(pool: State<'_, MySqlPool>) -> Result<Vec<Exp
             FROM Product p
             LEFT JOIN Medicines m ON p.prod_id = m.prod_id
             LEFT JOIN Batches b ON p.prod_id = b.prod_id
-            WHERE b.expiry_date < CURDATE()
+            WHERE b.expiry_date < CURDATE() AND (p.name LIKE ? OR m.generic_name LIKE ? OR m.company LIKE ?)
             ORDER BY p.prod_id;
-        ").fetch_all(pool.inner())
+        ")
+        .bind(&parameter)
+        .bind(&parameter)
+        .bind(&parameter)
+        .fetch_all(pool.inner())
         .await
         .map_err(|e| AppErrors::FailedToGetDataFromDatabase(e.to_string()))?;
     Ok(rows)
+}
+
+#[tauri::command]
+pub async fn get_product_id_for_stock(pool: State<'_, MySqlPool>, text: String) -> Result<Vec<StockProductSearch>, AppErrors> {
+    let parameter = format!("%{}%", text);
+    let ids = sqlx::query_as::<_, StockProductSearch>("
+            SELECT P.prod_id, P.prod_type, P.name, M.generic_name, M.company, M.form, M.strength
+            FROM Product P LEFT JOIN Medicines M ON M.prod_id = P.prod_id
+            WHERE P.name LIKE ? OR M.generic_name LIKE ? OR M.company LIKE ?;
+        ")
+        .bind(&parameter)
+        .bind(&parameter)
+        .bind(&parameter)
+        .fetch_all(pool.inner())
+        .await
+        .map_err(|e| AppErrors::FailedToGetDataFromDatabase(e.to_string()))?;
+    
+    Ok(ids)
 }

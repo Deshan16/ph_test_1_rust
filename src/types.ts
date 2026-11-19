@@ -10,6 +10,7 @@ export interface InventoryProductRow {
     in_expiry_period: boolean,
     low_stock: boolean,
     expiry_warning_days: number,
+    total_value: string,
     // Medicine Specific Attributes.
     generic_name: string | null,
     company: string | null,
@@ -117,4 +118,14 @@ export interface ExpiredItem {
     // Medicine Specific Attributes.
     generic_name: string | null,
     company: string | null
+}
+
+export interface StockProductSearch {
+    prod_id: number,
+    prod_type: string,
+    name: string,
+    generic_name: string,
+    company: string,
+    strength: string,
+    form: string
 }

@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { InventoryProductRow, InventoryBatchRow, BillingProductRow, BillingBatchRow, BillingOrder, BillingOrderInfo, ReorderItems, ExpiredItem } from "./types";
+import { InventoryProductRow, InventoryBatchRow, BillingProductRow, BillingBatchRow, BillingOrder, BillingOrderInfo, ReorderItems, ExpiredItem, StockProductSearch } from "./types";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 
 /**
@@ -18,6 +18,14 @@ export function inventoryGetProducts(text: string): Promise<InventoryProductRow[
  */
 export function inventoryGetBatches(prodId: number): Promise<InventoryBatchRow[]> {
 	return invoke<InventoryBatchRow[]>("inventory_get_batches", { prodId: prodId });
+}
+
+export function inventoryUpdateReorderLevel(prod_id: number, value: string): Promise<void> {
+	return invoke("inventory_update_reorder_level", { prodId: prod_id, value: value });
+}
+
+export function inventoryUpdateExpiryWarning(prod_id: number, value: number): Promise<void> {
+	return invoke("inventory_update_expiry_warning", { prodId: prod_id, value: value });
 }
 
 /**
@@ -76,11 +84,11 @@ export function batchRowColorPicker(batchRow: InventoryBatchRow | BillingBatchRo
     return null;
 }
 
-export function billingUpdateDatabase(order: BillingOrder) {
+export function billingUpdateDatabase(order: BillingOrder): Promise<BillingOrderInfo> {
 	return invoke<BillingOrderInfo>("update_database", { order: order });
 }
 
-export async function openWindow(label: string, url: string, title: string) {
+export async function openWindow(label: string, url: string, title: string): Promise<void> {
 	const existing = await WebviewWindow.getByLabel(label)
 	if (existing) {
 		await existing.setFocus();
@@ -91,20 +99,12 @@ export async function openWindow(label: string, url: string, title: string) {
 	win.once("tauri://error", (e) => console.error(`Failed to open ${label}`, e));
 }
 
-export function getReorderItems(): Promise<ReorderItems[]> {
-	return invoke<ReorderItems[]>("generate_reorder_list");
+export function generateReorderList(text: string): Promise<ReorderItems[]> {
+	return invoke<ReorderItems[]>("generate_reorder_list", { text: text });
 }
 
-export function getExpiredStock(): Promise<ExpiredItem[]> {
-	return invoke<ExpiredItem[]>("generate_expired_list");
-}
-
-export function inventoryUpdateReorderLevel(prod_id: number, value: number): Promise<void> {
-	return invoke("inventory_update_reorder_level", { prod_id: prod_id, value: value });
-}
-
-export function inventoryUpdateExpiryWarning(prod_id: number, value: number): Promise<void> {
-	return invoke("inventory_update_expiry_warning", { prod_id: prod_id, value: value });
+export function generateExpiredList(text: string): Promise<ExpiredItem[]> {
+	return invoke<ExpiredItem[]>("generate_expired_list", { text: text });
 }
 
 export function inputFilter(input: HTMLInputElement): void {
@@ -112,4 +112,8 @@ export function inputFilter(input: HTMLInputElement): void {
 	const parts = cleaned.split('.');
 	if (parts.length > 2) cleaned = parts[0] + '.' + parts.slice(1).join('');
 	input.value = cleaned;
+}
+
+export function getIdForAddStock(text: string): Promise<StockProductSearch[]> {
+	return invoke<StockProductSearch[]>("get_product_id_for_stock", { text: text });
 }

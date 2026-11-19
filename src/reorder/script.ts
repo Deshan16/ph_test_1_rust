@@ -1,11 +1,13 @@
-import { getReorderItems, mustGet } from "../functions";
+import { generateReorderList, mustGet } from "../functions";
 
 const reorderTable = mustGet<HTMLTableSectionElement>("#reorder_table tbody");
 const emptyLabel = mustGet<HTMLParagraphElement>("#empty");
+const input  = mustGet<HTMLInputElement>("#search_text");
+const clearTextButton = mustGet<HTMLButtonElement>(".clear");
 
-async function loadData() {
+async function loadData(text: string) {
     reorderTable.innerHTML = "";
-    const rows = await getReorderItems()
+    const rows = await generateReorderList(text)
     
     emptyLabel.hidden = true;
     reorderTable.hidden = false;
@@ -27,6 +29,17 @@ async function loadData() {
     });
 }
 
-loadData();
+loadData('');
 
-mustGet<HTMLButtonElement>("#refresh").addEventListener("click", async () => loadData());
+mustGet<HTMLButtonElement>("#refresh").addEventListener("click", async () => loadData(''));
+
+input.addEventListener("input", async () => {
+    clearTextButton.hidden = input.value === '';
+    loadData(input.value);
+});
+
+clearTextButton.addEventListener("click", async () => {
+    input.value = '';
+    loadData('');
+    clearTextButton.hidden = true;
+});

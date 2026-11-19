@@ -1,5 +1,6 @@
 import { InventoryBatchRow, InventoryProductRow, LABELS } from "../types";
 import { batchRowColorPicker, inputFilter, inventoryGetBatches, inventoryGetProducts, inventoryUpdateExpiryWarning, inventoryUpdateReorderLevel, mustGet, prodRowColorPicker } from "../functions";
+import Decimal from "decimal.js";
 
 const productTableBody = mustGet<HTMLTableSectionElement>("#invn_table tbody");
 const textInput = mustGet<HTMLInputElement>("#search_text");
@@ -20,10 +21,13 @@ async function loadData(text:string) {
     const product_rows = await inventoryGetProducts(text);
     
     productTableBody.innerHTML = '';
+    let total = Decimal('0');
     
     product_rows.forEach((prodRow) => {
         const invTableRow = productTableBody.insertRow()
         inventoryRowBuilder(invTableRow, prodRow);
+        
+        total = total.add(Decimal(prodRow.total_value));
         
         invTableRow.addEventListener("dblclick", async () => {
             batchWindow.hidden = false;
@@ -38,6 +42,8 @@ async function loadData(text:string) {
             });
         });
     });
+    
+    mustGet<HTMLSpanElement>("#sum_value").innerText = `Rs. ${total.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`;
 }
 
 // logic for input. when typing it refresh the table with newest received data.
@@ -79,14 +85,22 @@ function inventoryRowBuilder(invTableRow: HTMLTableRowElement, prodRow: Inventor
     invTableRow.insertCell().innerText = prodRow.stock;
     
     const input1 = inventoryReorderLevelInput(prodRow.reorder_level);
-    input1.addEventListener("blur", () => {
-        inventoryUpdateReorderLevel(prodRow.prod_id, parseInt(input1.value));
+    input1.addEventListener("blur", async () => {
+        try {
+            await inventoryUpdateReorderLevel(prodRow.prod_id, input1.value);
+        } catch(err) {
+            alert(err)
+        }
     });
     invTableRow.insertCell().appendChild(input1);
     
     const input2 = inventoryExpiryWarningInput(String(prodRow.expiry_warning_days))
-    input2.addEventListener("blur", () => {
-        inventoryUpdateExpiryWarning(prodRow.prod_id, prodRow.expiry_warning_days);
+    input2.addEventListener("blur", async () => {
+        try {
+            await inventoryUpdateExpiryWarning(prodRow.prod_id, parseInt(input2.value));
+        } catch(err) {
+            alert(err);
+        }
     });
     invTableRow.insertCell().appendChild(input2);
     
@@ -95,8 +109,8 @@ function inventoryRowBuilder(invTableRow: HTMLTableRowElement, prodRow: Inventor
     const cls = prodRowColorPicker(prodRow);
     
     if (cls) {
-        invTableRow.classList.add(cls);   // Add to the class list to visually identify the state of the row.
-        invTableRow.title = LABELS[cls];  // Add a hint text
+        invTableRow.classList.add(cls);   
+        invTableRow.title = LABELS[cls];  
     }
     
     invTableRow.setAttribute("data-id", String(prodRow.prod_id));

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../styles.css">
+    <link rel="stylesheet" href="style.css">
+    <script type="module" src="script.ts"></script>
+    <title>Add stock</title>
+</head>
+<body>
+    <div class="top_bar">
+        <div class="title"><span>Add stock</span></div>
+    </div>
+    
+    <main class="stock_page">
+        <form class="stock_form" id="stock_form" novalidate>
+            
+            <div class="field">
+                <span>Product</span>
+                <div class="product_row">
+                    <div class="product_box" id="product_box">
+                        <span class="product_id" id="selected_id">ID</span>
+                        <span class="product_name" id="selected_name">No product selected</span>
+                    </div>
+                    <button type="button" class="btn" id="search_product">Search</button>
+                </div>
+            </div>
+            
+            <label class="field">
+                <span>Batch number</span>
+                <input type="text" id="batch_number" placeholder="e.g. B2406A" autocomplete="off">
+            </label>
+            
+            <div class="field_grid">
+                <label class="field">
+                    <span>Quantity</span>
+                    <input type="text" class="num" id="quantity" inputmode="decimal" placeholder="0" autocomplete="off">
+                </label>
+                <label class="field">
+                    <span>Expiry date</span>
+                    <input type="date" id="expiry_date">
+                </label>
+                <label class="field">
+                    <span>Unit bought price</span>
+                    <input type="text" class="num" id="unit_bought_price" inputmode="decimal" placeholder="0.00" autocomplete="off">
+                </label>
+                <label class="field">
+                    <span>Unit sell price</span>
+                    <input type="text" class="num" id="unit_sell_price" inputmode="decimal" placeholder="0.00" autocomplete="off">
+                </label>
+            </div>
+            
+            <p class="form_msg" id="form_msg" hidden></p>
+            
+            <button type="submit" class="btn btn_primary" id="submit_stock">Add batch</button>
+        </form>
+    </main>
+    
+    <div class="overlay" id="overlay" hidden></div>
+    <div class="search_window" id="search_window" hidden>
+        <div class="search">
+            <input type="text" id="search_text" placeholder="Type here to search" autocomplete="off">
+            <button type="button" class="clear" id="clear" hidden>Clear</button>
+        </div>
+        <div class="results_box" id="results_box" hidden>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Product ID</th>
+                        <th>Product Type</th>
+                        <th>Name</th>
+                        <th>Generic Name</th>
+                        <th>Company</th>
+                        <th>Form</th>
+                        <th>Strength</th>
+                    </tr>
+                </thead>
+                <tbody id="results_body"></tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

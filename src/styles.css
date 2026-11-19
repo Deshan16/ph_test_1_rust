@@ -166,3 +166,10 @@ tr:is(.critical, .expiring, .low-stock, .expired):hover td { filter: brightness(
 }
 
 .empty { padding: 32px; text-align: center; color: var(--muted); }
+
+.search { padding: 16px 20px 8px; }
+.search input {
+    max-width: 420px;
+    background: var(--surface);
+}
+.search .clear[hidden] { display: none; }

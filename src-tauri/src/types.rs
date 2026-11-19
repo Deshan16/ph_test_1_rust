@@ -14,6 +14,8 @@ pub struct InventoryProductRow {
     pub in_expiry_period: bool, // if one of the batch is in the expiration period, this is true.
     pub low_stock: bool,
     pub expiry_warning_days: i64,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub total_value: Decimal,
     // Medicine Specific Attributes.
     pub generic_name: Option<String>,
     pub company: Option<String>,
@@ -118,4 +120,15 @@ pub struct ExpiredItem {
     // Medicine Specific Attributes.
     pub generic_name: Option<String>,
     pub company: Option<String>
+}
+
+#[derive(Debug, sqlx::FromRow, serde::Serialize)]
+pub struct StockProductSearch {
+    pub prod_id: i64,
+    pub prod_type: String,
+    pub name: String,
+    pub generic_name: Option<String>,
+    pub company: Option<String>,
+    pub strength: Option<String>,
+    pub form: Option<String>
 }

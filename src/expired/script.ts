@@ -1,22 +1,24 @@
-import { getExpiredStock, mustGet } from "../functions";
+import { generateExpiredList, mustGet } from "../functions";
 
-const reorderTable = mustGet<HTMLTableSectionElement>("#reorder_table tbody");
+const expiredTable = mustGet<HTMLTableSectionElement>("#expired_table tbody");
 const emptyLabel = mustGet<HTMLParagraphElement>("#empty");
+const input  = mustGet<HTMLInputElement>("#search_text");
+const clearTextButton = mustGet<HTMLButtonElement>(".clear");
 
-async function loadData() {
-    reorderTable.innerHTML = "";
-    const rows = await getExpiredStock()
+async function loadData(text: string) {
+    expiredTable.innerHTML = "";
+    const rows = await generateExpiredList(text);
     
     emptyLabel.hidden = true;
-    reorderTable.hidden = false;
+    expiredTable.hidden = false;
     
     if (rows.length === 0) {
         emptyLabel.hidden = false;
-        reorderTable.hidden = true;
+        expiredTable.hidden = true;
     }
     
     rows.forEach((row) => {
-        const tableRow = reorderTable.insertRow()
+        const tableRow = expiredTable.insertRow()
         
         tableRow.insertCell().innerText = String(row.prod_id);
         tableRow.insertCell().innerText = row.prod_type === "gro" ? "Grocery" : "Medicine";
@@ -30,6 +32,17 @@ async function loadData() {
     });
 }
 
-loadData();
+loadData('');
 
-mustGet<HTMLButtonElement>("#refresh").addEventListener("click", async () => loadData());
+mustGet<HTMLButtonElement>("#refresh").addEventListener("click", async () => loadData(''));
+
+input.addEventListener("input", async () => {
+    clearTextButton.hidden = input.value === '';
+    loadData(input.value);
+});
+
+clearTextButton.addEventListener("click", async () => {
+    input.value = '';
+    loadData('');
+    clearTextButton.hidden = true;
+});
