@@ -1,7 +1,8 @@
 import Decimal from "decimal.js";
-import { addBatchToDatabase, getIdForAddStock, inputFilter, mustGet } from "../functions";
+import { addBatchToDatabase, getIdForAddStock, inputFilter, mustGet, requireUser } from "../functions";
 import { NewBatchDetails, StockProductSearch } from "../types";
 
+await requireUser();  // Rediret back to login page. Prevent access by not logged in users.
 
 const form = mustGet<HTMLFormElement>("#stock_form");
 const searchWindow = mustGet<HTMLDivElement>("#search_window");

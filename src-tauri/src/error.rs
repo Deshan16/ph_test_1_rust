@@ -23,6 +23,8 @@ pub enum AppErrors {
     FailedToGetDataFromDatabase(String),
     #[allow(dead_code)]
     FailedToUpdateDatabase(String),
+    NotLoggedIn,
+    NotAllowed
 }
 
 impl serde::Serialize for AppErrors {
@@ -32,6 +34,8 @@ impl serde::Serialize for AppErrors {
         let msg = match self {
             AppErrors::FailedToGetDataFromDatabase(_) => "Failed to get data from database due to an error",
             AppErrors::FailedToUpdateDatabase(_) => "Failed to update data due to an error",
+            AppErrors::NotLoggedIn => "Please log in again",
+            AppErrors::NotAllowed => "You don't have permission to do this",
         };
         
         serializer.serialize_str(msg)

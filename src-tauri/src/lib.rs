@@ -3,6 +3,7 @@ use tauri::Manager;
 mod database;
 mod error;
 mod types;
+mod session;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -19,7 +20,8 @@ pub fn run() {
                 Ok(n) => println!("Deactivated {n} batches"),
                 Err(e) => eprintln!("Deactivate Failed {:?}", e),
             }
-            
+
+            app.manage(session::Session(std::sync::Mutex::new(None)));
             app.manage(pool);
             Ok(())
         })
@@ -36,7 +38,8 @@ pub fn run() {
             database::inventory_update_reorder_level,
             database::inventory_update_expiry_warning,
             database::get_product_id_for_stock,
-            database::add_batch_to_database
+            database::add_batch_to_database,
+            database::get_current_user
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

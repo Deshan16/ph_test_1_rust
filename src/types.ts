@@ -131,3 +131,9 @@ export interface NewBatchDetails {
     unit_sell_price: string,
     expiry_date: string,
 }
+
+export interface CurrentUser {
+    user_id: number,
+    user_name: string,
+    role: "admin" | "pharmacist",
+}

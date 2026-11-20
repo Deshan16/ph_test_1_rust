@@ -1,9 +1,9 @@
 import { BillingBatchRow, BillingOrder, BillingOrderItem, BillingProductRow, LABELS } from "../types";
-import { batchRowColorPicker, billingGetBatches, billingGetProducts, billingUpdateDatabase, inputFilter, mustGet, openWindow, prodRowColorPicker } from "../functions";
+import { batchRowColorPicker, billingGetBatches, billingGetProducts, billingUpdateDatabase, inputFilter, mustGet, openWindow, prodRowColorPicker, requireUser } from "../functions";
 import Decimal from "decimal.js";
 import { makeReceipts, saveReceipt } from "./receipts";
 
-
+await requireUser();
 
 const searchWindow = mustGet<HTMLDivElement>(".search_window");
 const overlay = mustGet<HTMLDivElement>(".overlay");

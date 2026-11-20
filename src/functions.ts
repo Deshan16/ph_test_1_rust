@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { InventoryProductRow, InventoryBatchRow, BillingProductRow, BillingBatchRow, BillingOrder, BillingOrderInfo, ReorderItems, ExpiredItem, StockProductSearch, NewBatchDetails } from "./types";
+import { InventoryProductRow, InventoryBatchRow, BillingProductRow, BillingBatchRow, BillingOrder, BillingOrderInfo, ReorderItems, ExpiredItem, StockProductSearch, NewBatchDetails, CurrentUser } from "./types";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 
 /**
@@ -120,4 +120,26 @@ export function getIdForAddStock(text: string): Promise<StockProductSearch[]> {
 
 export function addBatchToDatabase(batchDetails: NewBatchDetails): Promise<void> {
 	return invoke("add_batch_to_database", { batch: batchDetails });
+}
+
+export function getCurrentUser(): Promise<CurrentUser | null> {
+  return invoke<CurrentUser>("get_current_user");
+}
+
+export function login(): Promise<void> {
+  return invoke("logout");
+}
+
+export const isAdmin = (user: CurrentUser) => user.role === "admin";
+
+export async function requireUser(): Promise<CurrentUser> {
+  const user = await getCurrentUser();
+  if (!user) {
+    window.location.href = "/index.html";
+    return new Promise<never>(() => {});
+  }
+
+  if (!isAdmin(user))
+    document.querySelectorAll<HTMLElement>('[data-admin-only]').forEach((elemnt) => elemnt.hidden = true);
+  return user;
 }

@@ -1,6 +1,8 @@
 import { InventoryBatchRow, InventoryProductRow, LABELS } from "../types";
-import { batchRowColorPicker, inputFilter, inventoryGetBatches, inventoryGetProducts, inventoryUpdateExpiryWarning, inventoryUpdateReorderLevel, mustGet, prodRowColorPicker } from "../functions";
+import { batchRowColorPicker, inputFilter, inventoryGetBatches, inventoryGetProducts, inventoryUpdateExpiryWarning, inventoryUpdateReorderLevel, isAdmin, mustGet, prodRowColorPicker, requireUser } from "../functions";
 import Decimal from "decimal.js";
+
+const user = await requireUser();
 
 const productTableBody = mustGet<HTMLTableSectionElement>("#invn_table tbody");
 const textInput = mustGet<HTMLInputElement>("#search_text");
@@ -103,8 +105,10 @@ function inventoryRowBuilder(invTableRow: HTMLTableRowElement, prodRow: Inventor
         }
     });
     invTableRow.insertCell().appendChild(input2);
-    
-    invTableRow.insertCell().appendChild(inventoryOptionButton())
+
+    if (isAdmin(user)) {
+      invTableRow.insertCell().appendChild(inventoryOptionButton());  
+    }
     
     const cls = prodRowColorPicker(prodRow);
     

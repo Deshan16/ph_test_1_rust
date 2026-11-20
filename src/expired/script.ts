@@ -1,4 +1,6 @@
-import { generateExpiredList, mustGet } from "../functions";
+import { generateExpiredList, mustGet, requireUser } from "../functions";
+
+await requireUser();
 
 const expiredTable = mustGet<HTMLTableSectionElement>("#expired_table tbody");
 const emptyLabel = mustGet<HTMLParagraphElement>("#empty");

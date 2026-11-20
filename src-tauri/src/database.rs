@@ -1,14 +1,15 @@
 use crate::{
-    error::AppErrors, types::{
+    error::AppErrors, session::{ CurrentUser, Session, require_admin, require_login }, types::{
         BatchDetails, BillingBatchSearch, BillingOrder, BillingOrderInfo, BillingProductSearch, ExpiredItem, InventoryBatchRow, InventoryProductRow, ReorderItem, StockProductSearch,
-    },
+    }
 };
 use sqlx::MySqlPool;
 use tauri::State;
 
 /// get all the products from the database.
 #[tauri::command]
-pub async fn inventory_get_products(pool: State<'_, MySqlPool>, text: String) -> Result<Vec<InventoryProductRow>, AppErrors> {
+pub async fn inventory_get_products(pool: State<'_, MySqlPool>, session: State<'_, Session>, text: String) -> Result<Vec<InventoryProductRow>, AppErrors> {
+    require_login(&session)?;
     let parameter = format!("%{}%", text);
     let rows = sqlx::query_as::<_, InventoryProductRow>("
             SELECT p.prod_id, p.prod_type, p.name, p.reorder_level, p.expiry_warning_days,
@@ -35,7 +36,8 @@ pub async fn inventory_get_products(pool: State<'_, MySqlPool>, text: String) ->
 
 /// get all the batches of a product bby searching for product id.
 #[tauri::command]
-pub async fn inventory_get_batches(pool: State<'_, MySqlPool>, prod_id: i64) -> Result<Vec<InventoryBatchRow>, AppErrors> {
+pub async fn inventory_get_batches(pool: State<'_, MySqlPool>, session: State<'_, Session>, prod_id: i64) -> Result<Vec<InventoryBatchRow>, AppErrors> {
+    require_login(&session)?;
     let rows = sqlx::query_as::<_, InventoryBatchRow>("
             SELECT b.batch_id, b.batch_number, b.unit_bought_price, b.unit_sell_price, b.expiry_date, b.current_stock,
                 b.expiry_date >= CURDATE() AND b.current_stock > 0 AND b.expiry_date <= DATE_ADD(CURDATE(), INTERVAL p.expiry_warning_days DAY) AS in_expiry_period
@@ -51,7 +53,8 @@ pub async fn inventory_get_batches(pool: State<'_, MySqlPool>, prod_id: i64) -> 
 }
 
 #[tauri::command]
-pub async fn inventory_update_reorder_level(pool: State<'_, MySqlPool>, prod_id: i64, value: String) -> Result<(), AppErrors> {
+pub async fn inventory_update_reorder_level(pool: State<'_, MySqlPool>, session: State<'_, Session>, prod_id: i64, value: String) -> Result<(), AppErrors> {
+    require_admin(&session)?;
     let mut tx = pool
         .begin()
         .await
@@ -79,7 +82,8 @@ pub async fn inventory_update_reorder_level(pool: State<'_, MySqlPool>, prod_id:
 }
 
 #[tauri::command]
-pub async fn inventory_update_expiry_warning(pool: State<'_, MySqlPool>, prod_id: i64, value: i64) -> Result<(), AppErrors> {
+pub async fn inventory_update_expiry_warning(pool: State<'_, MySqlPool>, session: State<'_, Session>, prod_id: i64, value: i64) -> Result<(), AppErrors> {
+    require_admin(&session)?;
     let mut tx = pool
         .begin()
         .await
@@ -107,7 +111,8 @@ pub async fn inventory_update_expiry_warning(pool: State<'_, MySqlPool>, prod_id
 }
 
 #[tauri::command]
-pub async fn billing_get_products(pool: State<'_, MySqlPool>, text: String) -> Result<Vec<BillingProductSearch>, AppErrors> {
+pub async fn billing_get_products(pool: State<'_, MySqlPool>, session: State<'_, Session>, text: String) -> Result<Vec<BillingProductSearch>, AppErrors> {
+    require_login(&session)?;
     let parameter = format!("%{}%", text);
     let rows = sqlx::query_as::<_, BillingProductSearch>("
             SELECT p.prod_id, p.prod_type, p.name,
@@ -131,7 +136,8 @@ pub async fn billing_get_products(pool: State<'_, MySqlPool>, text: String) -> R
 }
 
 #[tauri::command]
-pub async fn billing_get_batches(pool: State<'_, MySqlPool>, prod_id: i32) -> Result<Vec<BillingBatchSearch>, AppErrors> {
+pub async fn billing_get_batches(pool: State<'_, MySqlPool>, session: State<'_, Session>, prod_id: i32) -> Result<Vec<BillingBatchSearch>, AppErrors> {
+    require_login(&session)?;
     let rows = sqlx::query_as::<_, BillingBatchSearch>("
             SELECT b.batch_id, b.batch_number, b.unit_sell_price, b.expiry_date, b.current_stock,
                 b.expiry_date >= CURDATE() AND b.current_stock > 0 AND b.expiry_date <= DATE_ADD(CURDATE(), INTERVAL p.expiry_warning_days DAY) AS in_expiry_period,
@@ -148,20 +154,26 @@ pub async fn billing_get_batches(pool: State<'_, MySqlPool>, prod_id: i32) -> Re
 }
 
 #[tauri::command]
-pub async fn login_data(pool: State<'_, MySqlPool>, username: String, password: String) -> Result<bool, String> {
-    let found: i64 = sqlx::query_scalar("
-            SELECT EXISTS(SELECT 1 FROM Users WHERE user_name = ? AND password = ?);
+pub async fn login_data(pool: State<'_, MySqlPool>, session: State<'_, Session>, username: String, password: String) -> Result<Option<CurrentUser>, AppErrors> {
+    let user = sqlx::query_as::<_, CurrentUser>("
+            SELECT user_id, user_name, role FROM Users WHERE user_name = ? AND password = ?;
         ")
         .bind(username)
         .bind(password)
-        .fetch_one(pool.inner())
+        .fetch_optional(pool.inner())
         .await
-        .map_err(|e| e.to_string())?;
-    Ok(found == 1)
+        .map_err(|_| AppErrors::NotAllowed)?;
+    if let Some(u) = user {
+        *session.0.lock().unwrap() = Some(u.clone());
+        Ok(Some(u))
+    } else {
+        Ok(None)
+    }
 }
 
 #[tauri::command]
-pub async fn update_database(pool: State<'_, MySqlPool>, order: BillingOrder) -> Result<BillingOrderInfo, AppErrors> {
+pub async fn update_database(pool: State<'_, MySqlPool>, session: State<'_, Session>, order: BillingOrder) -> Result<BillingOrderInfo, AppErrors> {
+    require_login(&session)?;
     let mut tx = pool
         .begin()
         .await
@@ -247,7 +259,8 @@ pub async fn deactivate_batches(pool: &MySqlPool) -> Result<u64, AppErrors> {
 }
 
 #[tauri::command]
-pub async fn generate_reorder_list(pool: State<'_, MySqlPool>, text: String) -> Result<Vec<ReorderItem>, AppErrors> {
+pub async fn generate_reorder_list(pool: State<'_, MySqlPool>, session: State<'_, Session>, text: String) -> Result<Vec<ReorderItem>, AppErrors> {
+    require_login(&session)?;
     let parameter = format!("%{}%", text);
     let rows = sqlx::query_as::<_, ReorderItem>("
             SELECT p.prod_id, p.prod_type, p.name, p.reorder_level,
@@ -271,7 +284,8 @@ pub async fn generate_reorder_list(pool: State<'_, MySqlPool>, text: String) -> 
 }
 
 #[tauri::command]
-pub async fn generate_expired_list(pool: State<'_, MySqlPool>, text: String) -> Result<Vec<ExpiredItem>, AppErrors> {
+pub async fn generate_expired_list(pool: State<'_, MySqlPool>, session: State<'_, Session>, text: String) -> Result<Vec<ExpiredItem>, AppErrors> {
+    require_login(&session)?;
     let parameter = format!("%{}%", text);
     let rows = sqlx::query_as::<_, ExpiredItem>("
             SELECT p.prod_id, p.prod_type, p.name, p.reorder_level,
@@ -293,7 +307,8 @@ pub async fn generate_expired_list(pool: State<'_, MySqlPool>, text: String) -> 
 }
 
 #[tauri::command]
-pub async fn get_product_id_for_stock(pool: State<'_, MySqlPool>, text: String) -> Result<Vec<StockProductSearch>, AppErrors> {
+pub async fn get_product_id_for_stock(pool: State<'_, MySqlPool>, session: State<'_, Session>, text: String) -> Result<Vec<StockProductSearch>, AppErrors> {
+    require_admin(&session)?;
     let parameter = format!("%{}%", text);
     let ids = sqlx::query_as::<_, StockProductSearch>("
             SELECT P.prod_id, P.prod_type, P.name, M.generic_name, M.company, M.form, M.strength
@@ -311,7 +326,8 @@ pub async fn get_product_id_for_stock(pool: State<'_, MySqlPool>, text: String) 
 }
 
 #[tauri::command]
-pub async fn add_batch_to_database(pool: State<'_, MySqlPool>, batch: BatchDetails) -> Result<(), AppErrors> {
+pub async fn add_batch_to_database(pool: State<'_, MySqlPool>, session: State<'_, Session>, batch: BatchDetails) -> Result<(), AppErrors> {
+    require_admin(&session)?;
     let mut tx = pool.begin()
         .await
         .map_err(|e| AppErrors::FailedToUpdateDatabase(e.to_string()))?;
@@ -330,10 +346,15 @@ pub async fn add_batch_to_database(pool: State<'_, MySqlPool>, batch: BatchDetai
         .execute(&mut *tx)
         .await
         .map_err(|e| AppErrors::FailedToUpdateDatabase(e.to_string()))?;
-    
+
     tx.commit()
         .await
-        .map_err(|e| AppErrors::FailedToUpdateDatabase(e.to_string()));
+        .map_err(|e| AppErrors::FailedToUpdateDatabase(e.to_string()))?;
     
     Ok(())
+}
+
+#[tauri::command]
+pub fn get_current_user(session: State<'_, Session>) -> Option<CurrentUser> {
+    session.0.lock().unwrap().clone()
 }
