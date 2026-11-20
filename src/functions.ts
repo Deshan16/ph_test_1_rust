@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { InventoryProductRow, InventoryBatchRow, BillingProductRow, BillingBatchRow, BillingOrder, BillingOrderInfo, ReorderItems, ExpiredItem, StockProductSearch } from "./types";
+import { InventoryProductRow, InventoryBatchRow, BillingProductRow, BillingBatchRow, BillingOrder, BillingOrderInfo, ReorderItems, ExpiredItem, StockProductSearch, NewBatchDetails } from "./types";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 
 /**
@@ -116,4 +116,8 @@ export function inputFilter(input: HTMLInputElement): void {
 
 export function getIdForAddStock(text: string): Promise<StockProductSearch[]> {
 	return invoke<StockProductSearch[]>("get_product_id_for_stock", { text: text });
+}
+
+export function addBatchToDatabase(batchDetails: NewBatchDetails): Promise<void> {
+	return invoke("add_batch_to_database", { batch: batchDetails });
 }

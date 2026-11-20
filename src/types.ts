@@ -88,13 +88,6 @@ export const SHOP = {
     phone: "000 000 0000" 
 };
 
-export const DIMENSIONS = {
-    W: 80,
-    M: 4,
-    LINE: 4.2,
-    FONT: 8
-}
-
 export interface ReorderItems {
     prod_id: number,
     prod_type: string,
@@ -128,4 +121,13 @@ export interface StockProductSearch {
     company: string,
     strength: string,
     form: string
+}
+
+export interface NewBatchDetails {
+    prod_id: number,
+    batch_number: string,
+    quantity: string,
+    unit_bought_price: string,
+    unit_sell_price: string,
+    expiry_date: string,
 }

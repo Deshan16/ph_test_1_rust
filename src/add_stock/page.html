@@ -39,7 +39,7 @@
                 </label>
                 <label class="field">
                     <span>Expiry date</span>
-                    <input type="date" id="expiry_date">
+                    <input type="text" id="expiry_date" placeholder="YYYY-MM-DD" inputmode="numeric" autocomplete="off" maxlength="10">
                 </label>
                 <label class="field">
                     <span>Unit bought price</span>
@@ -58,11 +58,13 @@
     </main>
     
     <div class="overlay" id="overlay" hidden></div>
+    
     <div class="search_window" id="search_window" hidden>
         <div class="search">
             <input type="text" id="search_text" placeholder="Type here to search" autocomplete="off">
             <button type="button" class="clear" id="clear" hidden>Clear</button>
         </div>
+        
         <div class="results_box" id="results_box" hidden>
             <table>
                 <thead>

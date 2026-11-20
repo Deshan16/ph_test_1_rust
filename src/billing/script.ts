@@ -81,6 +81,17 @@ const cart = {
         if (!item) return;
         item.bought_quantity = quantity;
         this.onChange();
+    },
+    
+    /**
+     *  Calculate total value of the cart.
+     * @returns total value of the cart.
+     */
+    totalValue(): string {
+        if (cart.items.length === 0) return "0"
+        let total = Decimal("0");
+        cart.items.forEach((item) => { total = total.add(Decimal(item.unit_price)) });
+        return total.toFixed(2);
     }
 }
 
@@ -92,6 +103,7 @@ cart.onChange = (): void => {
 mustGet<HTMLTableRowElement>(".add_row").addEventListener("click", () => {
     searchWindow.hidden = false;
     overlay.classList.add("active");
+    searchText.focus();
     productSearchBar.focus();
 });
 
@@ -187,7 +199,7 @@ function billingRowBuilder(billTableRow: HTMLTableRowElement, prodRow: BillingPr
     nameCell.innerText = prodRow.name;
     nameCell.title = `${prodRow.name} ${prodRow.generic_name} ${prodRow.company} ${prodRow.strength}`;
     
-    billTableRow.insertCell().innerText = batchRow.unit_sell_price;
+    billTableRow.insertCell().innerText = `Rs. ${batchRow.unit_sell_price}`;
     
     const input = quantityInputBuilder();
     billTableRow.insertCell().appendChild(input);
@@ -198,7 +210,7 @@ function billingRowBuilder(billTableRow: HTMLTableRowElement, prodRow: BillingPr
     
     cart.add({ batch_id: batchRow.batch_id, 
         bought_quantity: input.value, 
-        name: `${prodRow.name} ${prodRow.generic_name} ${prodRow.company}`,
+        name: `${prodRow.name} ${prodRow.generic_name ? prodRow.generic_name : ''} ${prodRow.company ? prodRow.company : ''}`,
         unit_price: batchRow.unit_sell_price
     });
     
@@ -207,7 +219,7 @@ function billingRowBuilder(billTableRow: HTMLTableRowElement, prodRow: BillingPr
         if (isNaN(parsedValue) || parsedValue <= 0.0 || input.value.trim() === '') input.value = '1';
         
         const quantity = input.value;
-        totalCell.innerText = String(Decimal(quantity).times(Decimal(batchRow.unit_sell_price)).toFixed(2));
+        totalCell.innerText = `Rs. ${Decimal(quantity).times(Decimal(batchRow.unit_sell_price)).toFixed(2)}`;
         input.disabled = true;
         cart.updateQuantity(batchRow.batch_id, input.value);
     });
@@ -290,6 +302,7 @@ function clearSearchWindow(): void {
     productTableBox.hidden = true;
     clearButton.hidden = true;
     batchTableBox.hidden = true;
+    searchText.focus();
 }
 
 /**
@@ -307,22 +320,11 @@ overlay.addEventListener("click", () => {
     toggleDrawer(false);
 });
 
-new MutationObserver(calculateTotal).observe(billingTable, {
+new MutationObserver(() => grandTotalField.textContent = `Rs. ${cart.totalValue()}`).observe(billingTable, {
     childList: true,
     subtree: true,
     characterData: true,
 });
-
-/**
- * Calculate the total of the bill.
- */
-function calculateTotal(): void {
-    let total = Decimal('0');
-    document.querySelectorAll<HTMLTableRowElement>("#billing_table tbody tr").forEach((row) => {
-        total = total.add(Decimal(String(row.cells[5].textContent)));
-    });
-    grandTotalField.textContent = total.toFixed(2);
-}
 
 document.addEventListener("click", () => {
     itemRowOptionMenu.hidden = true;
@@ -364,7 +366,7 @@ mustGet<HTMLButtonElement>("#checkout_close").addEventListener("click", closeChe
 
 function closeCheckoutWindow(): void {
     checkoutWindowAmountInput.value = '';
-    checkoutWindowChangeLabel.innerHTML = '0.00';
+    checkoutWindowChangeLabel.innerHTML = 'Rs. 0.00';
     checkoutWindow.hidden = true;
     checkoutWindowPaymentMethod.value = "card";
     checkoutWindowAmountInput.disabled = false;
@@ -373,11 +375,11 @@ function closeCheckoutWindow(): void {
 
 mustGet<HTMLButtonElement>("#next_customer").addEventListener("click", async () => {
     try {
-        const total = grandTotalField.textContent;
+        const total = grandTotalField.textContent.replace("Rs. ", '');
         const method = checkoutWindowPaymentMethod.value
         const status = "completed";
         const paid = checkoutWindowAmountInput.value;
-        const change = checkoutWindowChangeLabel.textContent;
+        const change = checkoutWindowChangeLabel.textContent.replace("Rs. ", '');
         
         const order: BillingOrder = {
             total_amount: total,
@@ -404,7 +406,7 @@ checkoutWindowAmountInput.addEventListener("input", () => inputFilter(checkoutWi
 checkoutWindowAmountInput.addEventListener("keydown", (event: KeyboardEvent) => {
     if (event.key === "Enter") {
         const paid = Decimal(checkoutWindowAmountInput.value);
-        const total = Decimal(grandTotalField.textContent);
+        const total = Decimal(grandTotalField.textContent.replace("Rs. ", ''));
         const change = paid.minus(total);
         if (change.isNeg()) {
             checkoutWindowChangeLabel.innerText = "Error";
@@ -412,7 +414,7 @@ checkoutWindowAmountInput.addEventListener("keydown", (event: KeyboardEvent) => 
             checkoutWindowNextCustomerButton.disabled = true;
             return
         }
-        checkoutWindowChangeLabel.innerText = change.toFixed(2);
+        checkoutWindowChangeLabel.innerText = `Rs. ${change.toFixed(2)}`;
         checkoutWindowAmountInput.blur();
         checkoutWindowNextCustomerButton.disabled = false;
     }
@@ -446,7 +448,7 @@ document.addEventListener("keydown", (event: KeyboardEvent) => {
 
 drawer.querySelectorAll<HTMLButtonElement>(".drawer_item").forEach((btn) => {
     btn.addEventListener("click", () => {
-        void openWindow(btn.getAttribute("data-label")!, btn.getAttribute("data-url")!, btn.getAttribute("data-title")!);
+        openWindow(btn.getAttribute("data-label")!, btn.getAttribute("data-url")!, btn.getAttribute("data-title")!);
         toggleDrawer(false);
     });
 });

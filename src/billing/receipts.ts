@@ -1,13 +1,20 @@
 import jsPDF from "jspdf";
-import { BillingOrder, BillingOrderInfo, DIMENSIONS, SHOP } from "../types";
+import { BillingOrder, BillingOrderInfo, SHOP } from "../types";
 import Decimal from "decimal.js";
 import { BaseDirectory, mkdir, writeFile } from "@tauri-apps/plugin-fs";
 
+
+const W = 80;
+const M = 4;
+const LINE = 4.2;
+const FONT = 8;
+const rs = (value: string | Decimal)=> `Rs. ${value}`;
+
 export function makeReceipts(orderInfo: BillingOrderInfo, orderDetails: BillingOrder, paid: string, change: string): Uint8Array<ArrayBuffer> {
-    const innerW = DIMENSIONS.W - 2 * DIMENSIONS.M;
-    const probe = new jsPDF({ unit: "mm", format: [DIMENSIONS.W, 100] });
+    const innerW = W - 2 * M;
+    const probe = new jsPDF({ unit: "mm", format: [W, 100] });
     probe.setFont("courier");
-    probe.setFontSize(DIMENSIONS.FONT);
+    probe.setFontSize(FONT);
     const rows = orderDetails.items.map((item) => ({
         nameLines: probe.splitTextToSize(item.name, innerW) as string[],
         quantity: item.bought_quantity,
@@ -15,31 +22,31 @@ export function makeReceipts(orderInfo: BillingOrderInfo, orderDetails: BillingO
     }));
     
     const itemLines  = rows.reduce((n, r) => n + r.nameLines.length + 1, 0);
-    const height = (16 + itemLines) * DIMENSIONS.LINE + 2* DIMENSIONS.M;
+    const height = (16 + itemLines) * LINE + 2* M;
     
-    const doc = new jsPDF({ unit: "mm", format: [DIMENSIONS.W, height] });
+    const doc = new jsPDF({ unit: "mm", format: [W, height] });
     doc.setFont("courier", "normal");
-    doc.setFontSize(DIMENSIONS.FONT);
-    let y = DIMENSIONS.M + 2;
+    doc.setFontSize(FONT);
+    let y = M + 2;
     
     const center = (t: string, bold = false) => {
         doc.setFont("courier", bold ? "bold" : "normal");
-        doc.text(t, DIMENSIONS.W / 2, y, { align: "center" });
+        doc.text(t, W / 2, y, { align: "center" });
         doc.setFont("courier", "normal");
-        y += DIMENSIONS.LINE;
+        y += LINE;
     };
     
     const leftRight = (l: string, r: string, bold = false) => {
         doc.setFont("courier", bold ? "bold" : "normal");
-        doc.text(l, DIMENSIONS.M, y);
-        doc.text(r, DIMENSIONS.W - DIMENSIONS.M, y, { align: "right" });
+        doc.text(l, M, y);
+        doc.text(r, W - M, y, { align: "right" });
         doc.setFont("courier", "normal");
-        y += DIMENSIONS.LINE;
+        y += LINE;
     };
     
     const rule = () => {
-        doc.line(DIMENSIONS.M, y - 1, DIMENSIONS.W - DIMENSIONS.M, y - 1);
-        y += DIMENSIONS.LINE;
+        doc.line(M, y - 1, W - M, y - 1);
+        y += LINE;
     };
     
     center(SHOP.name);
@@ -52,17 +59,17 @@ export function makeReceipts(orderInfo: BillingOrderInfo, orderDetails: BillingO
     
     for (const row of rows) {
         for (const line of row.nameLines) {
-            doc.text(line, DIMENSIONS.M, y);
-            y += DIMENSIONS.LINE;
+            doc.text(line, M, y);
+            y += LINE;
         }
         leftRight(`${row.quantity} x ${row.price}`, Decimal(row.quantity).times(Decimal(row.price)).toFixed(2));
     }
     
     rule();
-    leftRight("TOTAL", orderDetails.total_amount, true);
+    leftRight("TOTAL", rs(orderDetails.total_amount), true);
     leftRight("Payment", orderDetails.payment_method);
-    leftRight("Paid", paid);
-    leftRight("Change", change);
+    leftRight("Paid", rs(paid));
+    leftRight("Change", rs(change));
     rule();
     center("Thank you!");
     

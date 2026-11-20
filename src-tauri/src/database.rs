@@ -1,6 +1,6 @@
 use crate::{
     error::AppErrors, types::{
-        BillingBatchSearch, BillingOrder, BillingOrderInfo, BillingProductSearch, ExpiredItem, InventoryBatchRow, InventoryProductRow, ReorderItem, StockProductSearch,
+        BatchDetails, BillingBatchSearch, BillingOrder, BillingOrderInfo, BillingProductSearch, ExpiredItem, InventoryBatchRow, InventoryProductRow, ReorderItem, StockProductSearch,
     },
 };
 use sqlx::MySqlPool;
@@ -308,4 +308,32 @@ pub async fn get_product_id_for_stock(pool: State<'_, MySqlPool>, text: String) 
         .map_err(|e| AppErrors::FailedToGetDataFromDatabase(e.to_string()))?;
     
     Ok(ids)
+}
+
+#[tauri::command]
+pub async fn add_batch_to_database(pool: State<'_, MySqlPool>, batch: BatchDetails) -> Result<(), AppErrors> {
+    let mut tx = pool.begin()
+        .await
+        .map_err(|e| AppErrors::FailedToUpdateDatabase(e.to_string()))?;
+    
+    let _ = sqlx::query("
+            INSERT INTO Batches (prod_id, batch_number, unit_bought_price, unit_sell_price, expiry_date, current_stock, is_active)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ")
+        .bind(batch.prod_id)
+        .bind(batch.batch_number)
+        .bind(batch.unit_bought_price)
+        .bind(batch.unit_sell_price)
+        .bind(batch.expiry_date)
+        .bind(batch.quantity)
+        .bind(true)
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| AppErrors::FailedToUpdateDatabase(e.to_string()))?;
+    
+    tx.commit()
+        .await
+        .map_err(|e| AppErrors::FailedToUpdateDatabase(e.to_string()));
+    
+    Ok(())
 }
