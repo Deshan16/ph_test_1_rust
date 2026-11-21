@@ -88,11 +88,11 @@ const cart = {
      *  Calculate total value of the cart.
      * @returns total value of the cart.
      */
-    totalValue(): string {
-        if (cart.items.length === 0) return "0"
+    totalValue(): Decimal {
+        if (cart.items.length === 0) return Decimal('0');
         let total = Decimal("0");
         cart.items.forEach((item) => { total = total.add(Decimal(item.unit_price).times(Decimal(item.bought_quantity))) });
-        return total.toFixed(2);
+        return total.toDecimalPlaces(2);
     }
 }
 
