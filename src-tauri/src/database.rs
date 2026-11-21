@@ -184,14 +184,15 @@ pub async fn update_database(pool: State<'_, MySqlPool>, session: State<'_, Sess
     let now = chrono::Local::now();
     
     let res1 = sqlx::query("
-            INSERT INTO Orders (order_date, order_time, total_amount, payment_method, order_status)
-            VALUES (?, ?, ?, ?, ?);
+            INSERT INTO Orders (order_date, order_time, total_amount, payment_method, order_status, discount)
+            VALUES (?, ?, ?, ?, ?, ?);
         ")
         .bind(now.date_naive())
         .bind(now.time())
         .bind(&order.total_amount)
         .bind(&order.payment_method)
         .bind(&order.status)
+        .bind(&order.discount)
         .execute(&mut *tx)
         .await
         .map_err(|e| AppErrors::FailedToUpdateDatabase(e.to_string()))?;

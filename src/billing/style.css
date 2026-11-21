@@ -79,12 +79,13 @@ td.danger {
 .billing_table tfoot tr.add_row:hover td { color: var(--accent); background: var(--surface); }
 
 /* ---------- overlay (billing fades it with .active) ---------- */
-.overlay {
+.overlay, .overlay2 {
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.15s;
 }
 .overlay.active { opacity: 1; pointer-events: auto; }
+.overlay2.active { opacity: 1; pointer-events: auto; }
 
 /* ---------- search window ---------- */
 .search_window {
@@ -358,3 +359,36 @@ td.danger {
     border-left-color: var(--critical-edge);
     outline: none;
 }
+
+/* ---------- checkbox rows + discount input ---------- */
+.check_row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text);
+    cursor: pointer;
+    user-select: none;
+}
+.check_row input {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--accent);
+    color-scheme: dark;
+    cursor: pointer;
+}
+
+.discount_row { display: flex; gap: 8px; }
+.discount_row select,
+.discount_row input {
+    padding: 10px 14px;
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    outline: none;
+    font: inherit;
+    color-scheme: dark;
+}
+.discount_row input { flex: 1; min-width: 0; text-align: right; }
+.discount_row select:focus,
+.discount_row input:focus { border-color: var(--accent); }

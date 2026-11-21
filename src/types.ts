@@ -71,6 +71,7 @@ export interface BillingOrderItem {
 
 export interface BillingOrder {
     total_amount: string,
+    discount: string,
     payment_method: string,
     status: string,
     items: BillingOrderItem[]

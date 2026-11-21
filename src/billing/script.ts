@@ -29,7 +29,13 @@ const checkoutWindowPaymentMethod = mustGet<HTMLSelectElement>("#payment_method"
 const checkoutWindowChangeLabel = mustGet<HTMLSpanElement>("#change_amount");
 const drawer = mustGet<HTMLElement>("#drawer");
 const logoutPopUpBox = mustGet<HTMLDivElement>("#logout_confirm");
-
+const checkoutWindowDiscountToggle = mustGet<HTMLInputElement>("#discount_toggle");
+const checkoutWindowDiscountRow = mustGet<HTMLDivElement>("#discount_row");
+const checkoutWindowDiscountSummary = mustGet<HTMLDivElement>("#discount_summary_row");
+const checkoutWindowDiscountInput = mustGet<HTMLInputElement>("#discount_value");
+const checkoutWindowDiscountType = mustGet<HTMLSelectElement>("#discount_type");
+const checkoutWindowDiscountDisplay = mustGet<HTMLSpanElement>("#checkout_discount");
+const overlay2 = mustGet<HTMLDivElement>(".overlay2");
 
 /**
  *  Current active( just clicked ) row in the billing table.
@@ -352,7 +358,7 @@ function closeCancelOrderPopUp(): void {
 checkoutButton.addEventListener("click", () => {
     checkoutWindow.hidden = false;
     checkoutWindowNextCustomerButton.disabled = true;
-    overlay.classList.add("active");
+    overlay2.classList.add("active");
     checkoutWindowItemCount.innerText = String(cart.items.length);
     checkoutWindowTotal.innerText = cart.totalValue().toFixed(2);
 });
@@ -367,64 +373,53 @@ mustGet<HTMLButtonElement>("#checkout_close").addEventListener("click", closeChe
 
 function closeCheckoutWindow(): void {
     checkoutWindowAmountInput.value = '';
-    checkoutWindowChangeLabel.innerHTML = 'Rs. 0.00';
+    checkoutWindowChangeLabel.innerHTML = '0.00';
     checkoutWindow.hidden = true;
     checkoutWindowPaymentMethod.value = "card";
     checkoutWindowAmountInput.disabled = false;
-    overlay.classList.remove("active");
+    overlay2.classList.remove("active");
+    checkoutWindowDiscountToggle.checked = false;
+    checkoutWindowDiscountInput.value = '';
+    checkoutWindowDiscountDisplay.innerText = "0.00"
 }
 
 checkoutWindowNextCustomerButton.addEventListener("click", async () => {
     try {
-        const total = grandTotalField.textContent.replace("Rs. ", '');
-        const method = checkoutWindowPaymentMethod.value
-        const status = "completed";
         const paid = checkoutWindowAmountInput.value;
-        const change = checkoutWindowChangeLabel.textContent.replace("Rs. ", '');
+        const change = checkoutWindowChangeLabel.textContent;
         
-        const order: BillingOrder = {
-            total_amount: total,
-            payment_method: method,
-            status: status,
-            items: cart.items
+        let order: BillingOrder
+        if (checkoutWindowPaymentMethod.value === "card") {
+            order = {
+                total_amount: cart.totalValue().toFixed(2),
+                payment_method: "card",
+                status: "complete",
+                items: cart.items,
+                discount: '0'
+            }
+        } else {
+            const discount = checkoutWindowDiscountDisplay.textContent.replace("Rs. ", '');
+            order = {
+                total_amount: cart.totalValue().toFixed(2),
+                payment_method: "cash",
+                status: "complete",
+                items: cart.items,
+                discount: discount
+            } 
         }
         
         const orderInfo = await billingUpdateDatabase(order);
+        const isReceipt = mustGet<HTMLInputElement>("#print_receipt").checked;
+        if (isReceipt) {
+            const bytes = makeReceipts(orderInfo, order, paid, change);
+            await saveReceipt(bytes, orderInfo.order_id);
+        }
         
-        const bytes = makeReceipts(orderInfo, order, paid, change);
-        await saveReceipt(bytes, orderInfo.order_id);
-        
-        closeCheckoutWindow();
         cart.clear();
+        closeCheckoutWindow();
         billingTable.innerHTML = '';
     } catch (err) {
         alert(err);
-    }
-});
-
-checkoutWindowAmountInput.addEventListener("input", () => {
-    inputFilter(checkoutWindowAmountInput);
-    
-    const paid = Decimal(checkoutWindowAmountInput.value);
-    const total = cart.totalValue();
-    const change = paid.minus(total);
-    
-    if (change.isNeg()) {
-        checkoutWindowChangeLabel.innerText = "Error";
-        checkoutWindowNextCustomerButton.disabled = true;
-        return
-    }
-    
-    checkoutWindowChangeLabel.innerText = `Rs. ${change.toFixed(2)}`;
-    checkoutWindowNextCustomerButton.disabled = false;
-});
-
-checkoutWindowPaymentMethod.addEventListener("change", () => {
-    const isCard = checkoutWindowPaymentMethod.value === "card";
-    checkoutWindowAmountInput.disabled = isCard;
-    if (isCard) {
-        checkoutWindowAmountInput.value = '';
-        checkoutWindowChangeLabel.innerText = "0.00";
     }
 });
 
@@ -464,4 +459,67 @@ mustGet<HTMLButtonElement>("#logout_confirm_yes").addEventListener("click", logo
 function closeLogoutPopUp(): void {
     logoutPopUpBox.hidden = true;
     overlay.classList.remove("active");
+}
+
+checkoutWindowAmountInput.addEventListener("input", () => {
+    inputFilter(checkoutWindowAmountInput);
+    refreshCheckoutWindow();
+});
+
+checkoutWindowDiscountInput.addEventListener("input", () => {
+    inputFilter(checkoutWindowDiscountInput);
+    refreshCheckoutWindow();
+});
+
+checkoutWindowDiscountToggle.addEventListener("change", (event: Event) => {
+    const isChecked = !(event.target as HTMLInputElement).checked;
+    checkoutWindowDiscountRow.hidden = isChecked;
+    checkoutWindowDiscountSummary.hidden = isChecked;
+    refreshCheckoutWindow();
+});
+
+checkoutWindowPaymentMethod.addEventListener("change", () => {
+    const isCard = checkoutWindowPaymentMethod.value === "card";
+    checkoutWindowAmountInput.disabled = isCard;
+    checkoutWindowNextCustomerButton.disabled = !isCard;
+    checkoutWindowDiscountToggle.disabled = isCard;
+    if (isCard) {
+        checkoutWindowAmountInput.value = '';
+        checkoutWindowChangeLabel.innerText = "0.00";
+        checkoutWindowDiscountInput.value = '';
+        checkoutWindowDiscountDisplay.innerText = "0.00";
+        checkoutWindowDiscountToggle.checked = false;
+        checkoutWindowDiscountToggle.disabled = true;
+        checkoutWindowDiscountRow.hidden = true;
+        checkoutWindowTotal.innerText = `Rs. ${cart.totalValue()}`;
+    }
+});
+
+function refreshCheckoutWindow() {
+    inputFilter(checkoutWindowAmountInput);
+    inputFilter(checkoutWindowDiscountInput);
+    
+    const paid = Decimal(checkoutWindowAmountInput.value);
+    const total = cart.totalValue();
+    const discount = getDiscount();
+    const change = paid.minus(total.minus(discount));
+    
+    if (change.isNeg()) {
+        checkoutWindowChangeLabel.innerText = "Error";
+        checkoutWindowNextCustomerButton.disabled = true;
+        return;
+    }
+    
+    checkoutWindowTotal.innerText = `Rs. ${total.minus(discount)}`;
+    checkoutWindowChangeLabel.innerText = `Rs. ${change.toFixed(2)}`;
+    checkoutWindowDiscountDisplay.innerText = `Rs. ${discount.toFixed(2)}`
+    checkoutWindowNextCustomerButton.disabled = false;
+}
+
+function getDiscount() {
+    if (!checkoutWindowDiscountToggle.checked || checkoutWindowDiscountInput.value.trim() === '') return Decimal('0');
+    const total = cart.totalValue();
+    let value = Decimal(checkoutWindowDiscountInput.value);
+    const discount = checkoutWindowDiscountType.value === "percent" ? total.times(value).div(100) : value;
+    return Decimal.min(discount, total).toDecimalPlaces(2);
 }

@@ -128,7 +128,7 @@ tr:is(.critical, .expiring, .low-stock, .expired):hover td { filter: brightness(
 .search .clear:active { transform: translateY(1px); }
 
 /* ---------- overlay + popup windows ---------- */
-.overlay {
+.overlay, .overlay2 {
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.6);

@@ -81,6 +81,8 @@ pub struct BillingOrder {
     pub total_amount: Decimal,
     pub payment_method: String,
     pub status: String,
+    #[serde(with = "rust_decimal::serde::str")]
+    pub discount: Decimal,
     pub items: Vec<BillingOrderItems>
 }
 
