@@ -374,7 +374,7 @@ function closeCheckoutWindow(): void {
     overlay.classList.remove("active");
 }
 
-mustGet<HTMLButtonElement>("#next_customer").addEventListener("click", async () => {
+checkoutWindowNextCustomerButton.addEventListener("click", async () => {
     try {
         const total = grandTotalField.textContent.replace("Rs. ", '');
         const method = checkoutWindowPaymentMethod.value
