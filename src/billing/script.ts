@@ -321,7 +321,7 @@ overlay.addEventListener("click", () => {
     if (!drawer.hidden) toggleDrawer(false);
 });
 
-new MutationObserver(() => grandTotalField.textContent = `Rs. ${cart.totalValue()}`).observe(billingTable, {
+new MutationObserver(() => grandTotalField.innerText = `Rs. ${cart.totalValue().toFixed(2)}`).observe(billingTable, {
     childList: true,
     subtree: true,
     characterData: true,
@@ -402,23 +402,21 @@ checkoutWindowNextCustomerButton.addEventListener("click", async () => {
     }
 });
 
-checkoutWindowAmountInput.addEventListener("input", () => inputFilter(checkoutWindowAmountInput));
-
-checkoutWindowAmountInput.addEventListener("keydown", (event: KeyboardEvent) => {
-    if (event.key === "Enter") {
-        const paid = Decimal(checkoutWindowAmountInput.value);
-        const total = Decimal(grandTotalField.textContent.replace("Rs. ", ''));
-        const change = paid.minus(total);
-        if (change.isNeg()) {
-            checkoutWindowChangeLabel.innerText = "Error";
-            checkoutWindowAmountInput.select();
-            checkoutWindowNextCustomerButton.disabled = true;
-            return
-        }
-        checkoutWindowChangeLabel.innerText = `Rs. ${change.toFixed(2)}`;
-        checkoutWindowAmountInput.blur();
-        checkoutWindowNextCustomerButton.disabled = false;
+checkoutWindowAmountInput.addEventListener("input", () => {
+    inputFilter(checkoutWindowAmountInput);
+    
+    const paid = Decimal(checkoutWindowAmountInput.value);
+    const total = cart.totalValue();
+    const change = paid.minus(total);
+    
+    if (change.isNeg()) {
+        checkoutWindowChangeLabel.innerText = "Error";
+        checkoutWindowNextCustomerButton.disabled = true;
+        return
     }
+    
+    checkoutWindowChangeLabel.innerText = `Rs. ${change.toFixed(2)}`;
+    checkoutWindowNextCustomerButton.disabled = false;
 });
 
 checkoutWindowPaymentMethod.addEventListener("change", () => {
