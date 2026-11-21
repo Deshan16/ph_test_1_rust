@@ -338,3 +338,23 @@ td.danger {
     border-left-color: var(--accent);
     outline: none;
 }
+
+.drawer_logout {
+    margin-top: auto;              /* drawer is a flex column: this pushes it to the bottom */
+    padding: 12px 18px;
+    background: none;
+    border: none;
+    border-top: 1px solid var(--border);
+    border-left: 3px solid transparent;
+    color: var(--critical-edge);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+.drawer_logout:hover,
+.drawer_logout:focus-visible {
+    background: var(--critical-fill);
+    border-left-color: var(--critical-edge);
+    outline: none;
+}

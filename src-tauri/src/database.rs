@@ -1,5 +1,7 @@
 use crate::{
-    error::AppErrors, session::{ CurrentUser, Session, require_admin, require_login }, types::{
+    error::AppErrors, 
+    session::{ CurrentUser, Session, require_admin, require_login }, 
+    types::{
         BatchDetails, BillingBatchSearch, BillingOrder, BillingOrderInfo, BillingProductSearch, ExpiredItem, InventoryBatchRow, InventoryProductRow, ReorderItem, StockProductSearch,
     }
 };
@@ -156,13 +158,13 @@ pub async fn billing_get_batches(pool: State<'_, MySqlPool>, session: State<'_, 
 #[tauri::command]
 pub async fn login_data(pool: State<'_, MySqlPool>, session: State<'_, Session>, username: String, password: String) -> Result<Option<CurrentUser>, AppErrors> {
     let user = sqlx::query_as::<_, CurrentUser>("
-            SELECT user_id, user_name, role FROM Users WHERE user_name = ? AND password = ?;
+            SELECT user_name, role FROM Users WHERE user_name = ? AND password = ?;
         ")
         .bind(username)
         .bind(password)
         .fetch_optional(pool.inner())
         .await
-        .map_err(|_| AppErrors::NotAllowed)?;
+        .map_err(|e| AppErrors::FailedToGetDataFromDatabase(e.to_string()))?;
     if let Some(u) = user {
         *session.0.lock().unwrap() = Some(u.clone());
         Ok(Some(u))
@@ -357,4 +359,9 @@ pub async fn add_batch_to_database(pool: State<'_, MySqlPool>, session: State<'_
 #[tauri::command]
 pub fn get_current_user(session: State<'_, Session>) -> Option<CurrentUser> {
     session.0.lock().unwrap().clone()
+}
+
+#[tauri::command]
+pub fn logout(session: State<'_, Session>) {
+    *session.0.lock().unwrap() = None;
 }

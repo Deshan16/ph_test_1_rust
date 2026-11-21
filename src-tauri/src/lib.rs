@@ -39,7 +39,8 @@ pub fn run() {
             database::inventory_update_expiry_warning,
             database::get_product_id_for_stock,
             database::add_batch_to_database,
-            database::get_current_user
+            database::get_current_user,
+            database::logout
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

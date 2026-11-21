@@ -123,23 +123,23 @@ export function addBatchToDatabase(batchDetails: NewBatchDetails): Promise<void>
 }
 
 export function getCurrentUser(): Promise<CurrentUser | null> {
-  return invoke<CurrentUser>("get_current_user");
-}
-
-export function login(): Promise<void> {
-  return invoke("logout");
+	return invoke<CurrentUser>("get_current_user");
 }
 
 export const isAdmin = (user: CurrentUser) => user.role === "admin";
 
 export async function requireUser(): Promise<CurrentUser> {
-  const user = await getCurrentUser();
-  if (!user) {
-    window.location.href = "/index.html";
-    return new Promise<never>(() => {});
-  }
+	const user = await getCurrentUser();
+	if (!user) {
+		window.location.href = "../index.html";
+		return new Promise<never>(() => {});
+	}
+	if (!isAdmin(user))
+		document.querySelectorAll<HTMLElement>('[data-admin-only]').forEach((element) => element.hidden = true);
+	return user;
+}
 
-  if (!isAdmin(user))
-    document.querySelectorAll<HTMLElement>('[data-admin-only]').forEach((elemnt) => elemnt.hidden = true);
-  return user;
+export async function logout(): Promise<void> {
+	await invoke("logout");
+	window.location.href = "/index.html";
 }

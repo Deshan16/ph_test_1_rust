@@ -148,6 +148,18 @@
             <button type="button" class="btn btn_danger" id="confirm_yes">Cancel order</button>
         </div>
     </div>
+
+    <div class="confirm_box" id="logout_confirm" role="alertdialog" aria-labelledby="logout_title" hidden>
+        <div class="confirm_body">
+            <span class="confirm_title" id="logout_title">Log out?</span>
+            <span class="confirm_text">You will need to sign in again to continue.</span>
+        </div>
+    
+        <div class="confirm_footer">
+            <button type="button" class="btn" id="logout_stay">Stay</button>
+            <button type="button" class="btn btn_danger" id="logout_confirm_yes">Logout</button>
+        </div>
+    </div>
     
     <nav class="drawer" id="drawer" aria-hidden="true">
         <div class="drawer_header">
@@ -159,6 +171,8 @@
         <button class="drawer_item" data-label="expired" data-url="src/expired/page.html" data-title="Expired batches">Expired batches</button>
         <button class="drawer_item" data-label="inventory" data-url="src/inventory/page.html" data-title="Inventory overview">Inventory overview</button>
         <button class="drawer_item" data-label="reorder" data-url="src/reorder/page.html" data-title="Reorder list">Reorder list</button>
+        
+        <button class="drawer_logout" id="logout_btn">Logout</button>
     </nav>
 </body>
 </html>

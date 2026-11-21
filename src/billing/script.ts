@@ -1,5 +1,5 @@
 import { BillingBatchRow, BillingOrder, BillingOrderItem, BillingProductRow, LABELS } from "../types";
-import { batchRowColorPicker, billingGetBatches, billingGetProducts, billingUpdateDatabase, inputFilter, mustGet, openWindow, prodRowColorPicker, requireUser } from "../functions";
+import { batchRowColorPicker, billingGetBatches, billingGetProducts, billingUpdateDatabase, inputFilter, logout, mustGet, openWindow, prodRowColorPicker, requireUser } from "../functions";
 import Decimal from "decimal.js";
 import { makeReceipts, saveReceipt } from "./receipts";
 
@@ -28,6 +28,7 @@ const checkoutWindowTotal = mustGet<HTMLSpanElement>("#checkout_total");
 const checkoutWindowPaymentMethod = mustGet<HTMLSelectElement>("#payment_method");
 const checkoutWindowChangeLabel = mustGet<HTMLSpanElement>("#change_amount");
 const drawer = mustGet<HTMLElement>("#drawer");
+const logoutPopUpBox = mustGet<HTMLDivElement>("#logout_confirm");
 
 
 /**
@@ -90,7 +91,7 @@ const cart = {
     totalValue(): string {
         if (cart.items.length === 0) return "0"
         let total = Decimal("0");
-        cart.items.forEach((item) => { total = total.add(Decimal(item.unit_price)) });
+        cart.items.forEach((item) => { total = total.add(Decimal(item.unit_price).times(Decimal(item.bought_quantity))) });
         return total.toFixed(2);
     }
 }
@@ -317,7 +318,7 @@ function closeSearchWindow(): void {
 overlay.addEventListener("click", () => {
     if (!searchWindow.hidden) closeSearchWindow();
     if (!cancelPopUpBox.hidden) closeCancelOrderPopUp();
-    toggleDrawer(false);
+    if (!drawer.hidden) toggleDrawer(false);
 });
 
 new MutationObserver(() => grandTotalField.textContent = `Rs. ${cart.totalValue()}`).observe(billingTable, {
@@ -452,3 +453,17 @@ drawer.querySelectorAll<HTMLButtonElement>(".drawer_item").forEach((btn) => {
         toggleDrawer(false);
     });
 });
+
+mustGet<HTMLButtonElement>("#logout_btn").addEventListener("click", () => {
+    toggleDrawer(false);
+    logoutPopUpBox.hidden = false;
+    overlay.classList.add("active");
+});
+
+mustGet<HTMLButtonElement>("#logout_stay").addEventListener("click", closeLogoutPopUp);
+mustGet<HTMLButtonElement>("#logout_confirm_yes").addEventListener("click", logout);
+
+function closeLogoutPopUp(): void {
+    logoutPopUpBox.hidden = true;
+    overlay.classList.remove("active");
+}

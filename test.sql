@@ -59,3 +59,5 @@ WHERE b.prod_id = 1 AND b.is_active = TRUE;
 SELECT P.prod_id, P.prod_type, P.name, M.generic_name, M.company, M.form, M.strength
 FROM Product P LEFT JOIN Medicines M ON M.prod_id = P.prod_id
 WHERE P.name LIKE "Panadol%" OR M.generic_name LIKE "Panadol%" OR M.company LIKE "Panadol%";
+
+SELECT * FROM Orders;
