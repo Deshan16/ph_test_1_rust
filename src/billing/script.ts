@@ -354,7 +354,7 @@ checkoutButton.addEventListener("click", () => {
     checkoutWindowNextCustomerButton.disabled = true;
     overlay.classList.add("active");
     checkoutWindowItemCount.innerText = String(cart.items.length);
-    checkoutWindowTotal.innerText = grandTotalField.textContent;
+    checkoutWindowTotal.innerText = cart.totalValue().toFixed(2);
 });
 
 mustGet<HTMLButtonElement>("#cancel_checkout").addEventListener("click", () => {
